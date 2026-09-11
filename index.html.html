@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="L'Ardoise">
 <meta name="theme-color" content="#F6F5F2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
 <title>L'Ardoise</title>
 <style>
 :root{
@@ -1903,26 +1906,6 @@ function App() {
     role: "status"
   }, toast));
 }
-(function setTouchIcon() {
-  try {
-    const c = document.createElement("canvas");
-    c.width = c.height = 180;
-    const x = c.getContext("2d");
-    x.fillStyle = "#FAEEDA";
-    x.fillRect(0, 0, 180, 180);
-    x.translate(36, 38);
-    x.scale(4.5, 4.5);
-    x.strokeStyle = "#854F0B";
-    x.lineWidth = 1.6;
-    x.lineCap = "round";
-    x.lineJoin = "round";
-    x.stroke(new Path2D("M4 8h16a1 1 0 0 1 1 1v.5c0 1.5 -2.517 5.573 -4 6.5v1a1 1 0 0 1 -1 1h-8a1 1 0 0 1 -1 -1v-1c-1.687 -1.054 -4 -5 -4 -6.5v-.5a1 1 0 0 1 1 -1"));
-    const l = document.createElement("link");
-    l.rel = "apple-touch-icon";
-    l.href = c.toDataURL("image/png");
-    document.head.appendChild(l);
-  } catch (e) {}
-})();
 ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App, null));
 </script>
 </body>
