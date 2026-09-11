@@ -109,6 +109,17 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .form-foot{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:14px 26px calc(14px + env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:auto}
 .foot-right{display:flex;gap:8px}
 .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-size:15px;z-index:40;animation:rise .2s ease}
+.round-btn{position:relative}
+.badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--ink);color:#fff;font-size:11px;font-weight:600;display:grid;place-items:center;border:2px solid var(--bg)}
+.active-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:-8px 0 22px}
+.result-count{font-size:14px;color:var(--ink3);margin-right:4px}
+.active-pill{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px 0 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line2);font-size:14px;color:var(--ink)}
+.active-pill svg{color:var(--ink3)}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.chip.on .dot{box-shadow:0 0 0 2px #fff}
+.switch-label{display:block;font-size:16px;color:var(--ink)}
+.hint{font-size:13px;color:var(--ink3);margin:3px 0 0}
+.btn.ghost{color:var(--ink2);padding:0 12px}
 @media (max-width:640px){
   :root{--pad:18px}
   .title{font-size:30px}
@@ -234,7 +245,133 @@ const DIFF_CODE = {
   M: "Moyen",
   E: "Élaboré"
 };
+const MOODS = [{
+  id: "reconfortant",
+  label: "Réconfortant"
+}, {
+  id: "leger",
+  label: "Léger"
+}];
+const SERVES = [{
+  id: "chaud",
+  label: "Chaud"
+}, {
+  id: "froid",
+  label: "Froid"
+}, {
+  id: "both",
+  label: "Chaud ou froid"
+}];
+const TIMES = [{
+  id: 20,
+  label: "Moins de 20 min"
+}, {
+  id: 30,
+  label: "Moins de 30 min"
+}, {
+  id: 45,
+  label: "Moins de 45 min"
+}, {
+  id: "long",
+  label: "J'ai le temps"
+}];
+const MONTH_SEASONS = ["H", "H", "HP", "P", "P", "PE", "E", "E", "EA", "A", "A", "AH"];
+const nowSeasons = () => MONTH_SEASONS[new Date().getMonth()].split("");
+const seasonText = list => list.map(id => SEASONS.find(x => x.id === id).label.toLowerCase()).join(" et ");
+const EMPTY_FILTERS = {
+  time: null,
+  proteins: [],
+  moods: [],
+  serve: null,
+  seasonal: false,
+  lunchbox: false
+};
+const DEFAULT_FILTERS = {
+  ...EMPTY_FILTERS,
+  seasonal: true
+};
 const SEED = [["Pâtes carbonara", "pates", "blanche", 20, "F", 0, "PEAH", "Spaghetti|Lardons|Œufs|Parmesan|Poivre"], ["Tagliatelles aux champignons et à la crème", "pates", "vege", 25, "F", 1, "AH", "Tagliatelles|Champignons de Paris|Crème fraîche|Ail|Persil|Parmesan"], ["Pâtes saumon-épinards", "pates", "poisson", 25, "F", 1, "PAH", "Penne|Saumon|Épinards|Crème fraîche|Citron"], ["Spaghetti bolognaise", "pates", "rouge", 40, "F", 1, "PEAH", "Spaghetti|Bœuf haché|Tomates concassées|Oignon|Carotte|Parmesan"], ["One pot pasta tomates cerises et mozzarella", "pates", "vege", 20, "F", 0, "E", "Pâtes|Tomates cerises|Mozzarella|Basilic|Ail"], ["Pâtes au pesto et poulet", "pates", "blanche", 20, "F", 1, "PE", "Pâtes|Pesto|Blancs de poulet|Parmesan|Pignons de pin"], ["Pâtes à la butternut et lardons", "pates", "blanche", 30, "F", 1, "AH", "Pâtes|Courge butternut|Lardons|Crème fraîche|Parmesan"], ["Pâtes au thon, tomate et câpres", "pates", "poisson", 20, "F", 1, "PEAH", "Pâtes|Thon en boîte|Tomates concassées|Câpres|Oignon"], ["Pâtes poireaux et chèvre", "pates", "vege", 25, "F", 1, "AH", "Pâtes|Poireaux|Fromage de chèvre|Crème fraîche"], ["Gnocchis sauce gorgonzola et noix", "pates", "vege", 20, "F", 0, "AH", "Gnocchis|Gorgonzola|Crème fraîche|Noix|Épinards"], ["Pâtes à la saucisse et au brocoli", "pates", "blanche", 25, "F", 1, "AH", "Pâtes courtes|Saucisses|Brocoli|Ail|Parmesan"], ["Lasagnes bolognaise", "gratins", "rouge", 75, "M", 1, "AH", "Feuilles de lasagne|Bœuf haché|Tomates concassées|Béchamel|Emmental"], ["Hachis parmentier", "gratins", "rouge", 60, "F", 1, "AH", "Pommes de terre|Bœuf haché|Oignon|Lait|Beurre|Emmental"], ["Gratin de coquillettes au jambon", "gratins", "blanche", 35, "F", 1, "AH", "Coquillettes|Jambon|Crème fraîche|Emmental"], ["Gratin dauphinois et jambon", "gratins", "blanche", 75, "F", 1, "AH", "Pommes de terre|Crème fraîche|Lait|Ail|Jambon"], ["Tartiflette", "gratins", "blanche", 50, "F", 1, "H", "Pommes de terre|Reblochon|Lardons|Oignons|Crème fraîche"], ["Endives au jambon", "gratins", "blanche", 50, "F", 1, "H", "Endives|Jambon|Béchamel|Emmental"], ["Gratin de courgettes", "gratins", "oeufs", 45, "F", 1, "E", "Courgettes|Œufs|Crème fraîche|Gruyère râpé"], ["Gratin de chou-fleur", "gratins", "vege", 45, "F", 1, "AH", "Chou-fleur|Béchamel|Emmental|Muscade"], ["Parmentier de poisson", "gratins", "poisson", 50, "F", 1, "AH", "Pommes de terre|Cabillaud|Lait|Beurre|Emmental"], ["Aubergines à la parmigiana", "gratins", "vege", 60, "M", 1, "E", "Aubergines|Tomates concassées|Mozzarella|Parmesan|Basilic"], ["Gratin de patates douces et poireaux", "gratins", "vege", 50, "F", 1, "AH", "Patates douces|Poireaux|Crème fraîche|Comté"], ["Chili con carne", "mijotes", "rouge", 60, "F", 1, "AH", "Bœuf haché|Haricots rouges|Tomates concassées|Oignon|Poivron|Épices chili|Riz"], ["Chili sin carne", "mijotes", "legumineuses", 45, "F", 1, "AH", "Haricots rouges|Maïs|Tomates concassées|Oignon|Épices chili|Riz"], ["Bœuf bourguignon", "mijotes", "rouge", 180, "M", 1, "AH", "Bœuf à braiser|Vin rouge|Carottes|Lardons|Champignons|Oignons"], ["Blanquette de veau", "mijotes", "blanche", 120, "M", 1, "AH", "Veau|Carottes|Champignons|Crème fraîche|Oignon|Riz"], ["Poulet basquaise", "mijotes", "blanche", 60, "F", 1, "EA", "Poulet|Poivrons|Tomates|Oignon|Riz"], ["Curry de poulet au lait de coco", "mijotes", "blanche", 40, "F", 1, "PEAH", "Poulet|Lait de coco|Curry|Oignon|Riz"], ["Dahl de lentilles corail", "mijotes", "legumineuses", 35, "F", 1, "AH", "Lentilles corail|Lait de coco|Tomates concassées|Oignon|Épices|Riz"], ["Petit salé aux lentilles", "mijotes", "blanche", 90, "F", 1, "H", "Petit salé|Lentilles vertes|Carottes|Oignon"], ["Porc au caramel", "mijotes", "blanche", 40, "F", 1, "PEAH", "Échine de porc|Sauce soja|Sucre|Oignon|Riz"], ["Pot-au-feu", "mijotes", "rouge", 180, "F", 1, "H", "Bœuf pot-au-feu|Carottes|Poireaux|Navets|Pommes de terre"], ["Curry de pois chiches aux épinards", "mijotes", "legumineuses", 30, "F", 1, "PAH", "Pois chiches|Épinards|Lait de coco|Tomates concassées|Curry|Riz"], ["Rougail saucisse", "mijotes", "blanche", 50, "F", 1, "PEAH", "Saucisses fumées|Tomates concassées|Oignon|Piment|Riz"], ["Poulet aux champignons et à la crème", "mijotes", "blanche", 35, "F", 1, "AH", "Poulet|Champignons|Crème fraîche|Oignon|Riz"], ["Carbonnade flamande", "mijotes", "rouge", 150, "M", 1, "H", "Bœuf à braiser|Bière brune|Oignons|Pain d'épices|Frites"], ["Boulettes de bœuf à la tomate", "mijotes", "rouge", 40, "F", 1, "PEAH", "Bœuf haché|Tomates concassées|Oignon|Chapelure|Pâtes ou riz"], ["Quiche lorraine", "tartes", "oeufs", 50, "F", 1, "PEAH", "Pâte brisée|Lardons|Œufs|Crème fraîche|Emmental"], ["Quiche poireaux et saumon", "tartes", "poisson", 50, "F", 1, "AH", "Pâte brisée|Poireaux|Saumon|Œufs|Crème fraîche"], ["Quiche courgettes et chèvre", "tartes", "oeufs", 50, "F", 1, "E", "Pâte brisée|Courgettes|Fromage de chèvre|Œufs|Crème fraîche"], ["Tarte thon, tomate et moutarde", "tartes", "poisson", 45, "F", 1, "E", "Pâte brisée|Thon en boîte|Tomates|Moutarde|Emmental"], ["Tarte butternut et feta", "tartes", "vege", 50, "F", 1, "AH", "Pâte feuilletée|Courge butternut|Feta|Œufs|Crème fraîche"], ["Flammekueche", "tartes", "blanche", 25, "F", 0, "PEAH", "Pâte à pizza fine|Crème fraîche|Lardons|Oignons"], ["Quiche épinards et feta", "tartes", "oeufs", 50, "F", 1, "P", "Pâte brisée|Épinards|Feta|Œufs|Crème fraîche"], ["Tarte aux champignons et comté", "tartes", "vege", 45, "F", 1, "A", "Pâte feuilletée|Champignons|Comté|Œufs|Crème fraîche"], ["Tarte tomate et mozzarella", "tartes", "vege", 40, "F", 0, "E", "Pâte feuilletée|Tomates|Mozzarella|Moutarde|Basilic"], ["Pizza jambon-champignons", "pizzas", "blanche", 30, "F", 0, "PEAH", "Pâte à pizza|Sauce tomate|Jambon|Champignons|Mozzarella"], ["Pizza chèvre et miel", "pizzas", "vege", 25, "F", 0, "PEAH", "Pâte à pizza|Crème fraîche|Fromage de chèvre|Miel|Noix"], ["Pizza aux légumes grillés", "pizzas", "vege", 35, "F", 0, "E", "Pâte à pizza|Sauce tomate|Courgette|Poivron|Aubergine|Mozzarella"], ["Croque-monsieur et salade", "pizzas", "blanche", 20, "F", 0, "PEAH", "Pain de mie|Jambon|Emmental|Béchamel|Salade verte"], ["Galettes complètes", "pizzas", "oeufs", 20, "F", 0, "PEAH", "Galettes de sarrasin|Jambon|Œufs|Emmental"], ["Burgers maison", "pizzas", "rouge", 30, "F", 0, "PEAH", "Pains à burger|Steaks hachés|Cheddar|Oignon|Tomate|Salade"], ["Raclette", "pizzas", "blanche", 20, "F", 0, "H", "Fromage à raclette|Pommes de terre|Charcuterie|Cornichons"], ["Pizza chorizo et poivrons", "pizzas", "blanche", 30, "F", 0, "EA", "Pâte à pizza|Sauce tomate|Chorizo|Poivrons|Mozzarella"], ["Velouté de potimarron", "soupes", "vege", 35, "F", 1, "AH", "Potimarron|Oignon|Crème fraîche|Bouillon de légumes"], ["Soupe de légumes et croûtons", "soupes", "vege", 40, "F", 1, "AH", "Poireaux|Carottes|Pommes de terre|Oignon|Pain"], ["Soupe à l'oignon gratinée", "soupes", "vege", 60, "M", 1, "H", "Oignons|Bouillon|Pain|Emmental|Beurre"], ["Soupe lentilles corail et carottes", "soupes", "legumineuses", 30, "F", 1, "AH", "Lentilles corail|Carottes|Lait de coco|Cumin|Oignon"], ["Minestrone", "soupes", "legumineuses", 45, "F", 1, "PE", "Courgettes|Carottes|Haricots blancs|Petites pâtes|Tomates concassées|Parmesan"], ["Velouté poireaux et pommes de terre", "soupes", "vege", 35, "F", 1, "AH", "Poireaux|Pommes de terre|Crème fraîche|Bouillon"], ["Gaspacho et tartines", "soupes", "vege", 15, "F", 0, "E", "Tomates|Concombre|Poivron|Ail|Pain"], ["Velouté de champignons", "soupes", "vege", 30, "F", 1, "A", "Champignons|Oignon|Crème fraîche|Bouillon"], ["Fondue de poireaux et saumon", "poelees", "poisson", 30, "F", 1, "AH", "Poireaux|Pavés de saumon|Crème fraîche|Beurre"], ["Fajitas au poulet", "poelees", "blanche", 30, "F", 0, "EA", "Tortillas|Poulet|Poivrons|Oignon|Crème fraîche|Cheddar"], ["Wok de bœuf et nouilles", "poelees", "rouge", 25, "F", 1, "PEAH", "Bœuf|Nouilles|Carottes|Oignon|Sauce soja"], ["Tortilla espagnole", "poelees", "oeufs", 35, "F", 1, "PEAH", "Œufs|Pommes de terre|Oignon"], ["Steak haché et purée maison", "poelees", "rouge", 35, "F", 0, "PEAH", "Steaks hachés|Pommes de terre|Lait|Beurre"], ["Poêlée campagnarde et œuf au plat", "poelees", "oeufs", 30, "F", 0, "AH", "Pommes de terre|Lardons|Oignons|Œufs"], ["Omelette aux champignons", "poelees", "oeufs", 15, "F", 0, "A", "Œufs|Champignons|Persil|Gruyère râpé"], ["Gnocchis poêlés chorizo et poivrons", "poelees", "blanche", 20, "F", 0, "E", "Gnocchis|Chorizo|Poivrons|Oignon"], ["Poulet à la moutarde et riz", "poelees", "blanche", 30, "F", 1, "PEAH", "Escalopes de poulet|Moutarde|Crème fraîche|Riz"], ["Shakshuka", "poelees", "oeufs", 30, "F", 0, "EA", "Œufs|Tomates concassées|Poivrons|Oignon|Cumin|Pain"], ["Saucisses-purée", "poelees", "blanche", 35, "F", 0, "AH", "Saucisses de Toulouse|Pommes de terre|Oignons|Lait|Beurre"], ["Risotto aux champignons", "riz", "vege", 35, "M", 0, "A", "Riz arborio|Champignons|Parmesan|Bouillon|Vin blanc"], ["Riz cantonais", "riz", "oeufs", 25, "F", 1, "PEAH", "Riz|Œufs|Jambon|Petits pois|Oignon|Sauce soja"], ["Paella express", "riz", "poisson", 50, "M", 1, "E", "Riz|Crevettes|Chorizo|Poivron|Petits pois|Safran"], ["Risotto aux asperges", "riz", "vege", 35, "M", 0, "P", "Riz arborio|Asperges|Parmesan|Bouillon"], ["Poke bowl au saumon", "riz", "poisson", 25, "F", 0, "E", "Riz|Saumon|Avocat|Concombre|Sauce soja"], ["Risotto chorizo et petits pois", "riz", "blanche", 35, "M", 0, "P", "Riz arborio|Chorizo|Petits pois|Parmesan|Bouillon"], ["Saumon à la crème et riz", "four", "poisson", 25, "F", 1, "PEAH", "Pavés de saumon|Crème fraîche|Citron|Aneth|Riz"], ["Poulet rôti et pommes de terre", "four", "blanche", 75, "F", 1, "PEAH", "Poulet|Pommes de terre|Ail|Thym"], ["Cabillaud en papillote et légumes", "four", "poisson", 30, "F", 0, "PE", "Cabillaud|Courgettes|Tomates cerises|Citron|Riz"], ["Poisson pané et purée de carottes", "four", "poisson", 35, "F", 0, "AH", "Poisson pané|Carottes|Pommes de terre|Beurre"], ["Légumes rôtis, feta et pois chiches", "four", "legumineuses", 40, "F", 1, "AH", "Patates douces|Carottes|Oignon rouge|Pois chiches|Feta"], ["Tomates farcies et riz", "four", "blanche", 60, "F", 1, "E", "Tomates|Chair à saucisse|Oignon|Riz"], ["Courgettes farcies", "four", "blanche", 55, "F", 1, "E", "Courgettes rondes|Chair à saucisse|Riz|Parmesan"], ["Pommes de terre au four et fromage frais", "four", "vege", 60, "F", 0, "AH", "Grosses pommes de terre|Fromage frais ail et fines herbes|Ciboulette|Salade verte"], ["Filet mignon moutarde et pommes de terre", "four", "blanche", 50, "F", 1, "AH", "Filet mignon de porc|Moutarde|Crème fraîche|Pommes de terre"], ["Salade César", "frais", "blanche", 25, "F", 0, "E", "Salade romaine|Poulet|Parmesan|Croûtons|Sauce César"], ["Salade de pâtes à la grecque", "frais", "vege", 20, "F", 1, "E", "Pâtes|Tomates cerises|Feta|Olives|Concombre"], ["Taboulé et falafels", "frais", "legumineuses", 25, "F", 1, "E", "Boulgour|Tomates|Concombre|Menthe|Falafels"], ["Salade niçoise", "frais", "poisson", 25, "F", 0, "E", "Thon|Œufs|Tomates|Haricots verts|Olives|Pommes de terre"], ["Salade de lentilles et œufs mollets", "frais", "legumineuses", 25, "F", 1, "EA", "Lentilles vertes|Échalote|Moutarde|Œufs"], ["Salade pommes de terre et saumon fumé", "frais", "poisson", 25, "F", 1, "PE", "Pommes de terre|Saumon fumé|Crème fraîche|Ciboulette|Concombre"]];
+const COMFORT = [1, 2, 4, 7, 9, 10, 12, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 32, 34, 35, 36, 37, 38, 43, 47, 48, 50, 51, 52, 53, 54, 57, 67, 68, 70, 73, 74, 79, 81, 83, 87];
+const LIGHT = [18, 46, 55, 56, 58, 59, 60, 61, 62, 69, 72, 78, 82, 84, 89, 90, 91, 92, 93, 94];
+const COLD = [61, 78, 89, 90, 91, 92, 93, 94];
+const BOTH = [38, 39, 40, 41, 42, 44, 45, 46, 66];
+function seedExtras(n) {
+  return {
+    mood: [...(COMFORT.includes(n) ? ["reconfortant"] : []), ...(LIGHT.includes(n) ? ["leger"] : [])],
+    serve: COLD.includes(n) ? "froid" : BOTH.includes(n) ? "both" : "chaud"
+  };
+}
+function withSeedDefaults(r) {
+  if (r && r.serve === undefined && /^s\d+$/.test(String(r.id || ""))) {
+    const n = parseInt(String(r.id).slice(1), 10);
+    if (n >= 1 && n <= SEED.length) return {
+      ...seedExtras(n),
+      ...r
+    };
+  }
+  return r;
+}
+function matchFilters(r, f, seasonsNow) {
+  if (f.time === "long" ? r.time <= 45 : f.time && r.time > f.time) return false;
+  if (f.proteins.length && !f.proteins.includes(r.protein)) return false;
+  if (f.seasonal && r.seasons.length && !r.seasons.some(x => seasonsNow.includes(x))) return false;
+  if (f.lunchbox && !r.reheats) return false;
+  if (f.moods.length && !f.moods.some(m => r.mood.includes(m))) return false;
+  if (f.serve && r.serve !== f.serve && r.serve !== "both") return false;
+  return true;
+}
+function activeFilters(f) {
+  const out = [];
+  if (f.seasonal) out.push({
+    key: "season",
+    label: "De saison",
+    remove: p => ({
+      ...p,
+      seasonal: false
+    })
+  });
+  if (f.time) out.push({
+    key: "time",
+    label: TIMES.find(t => t.id === f.time).label,
+    remove: p => ({
+      ...p,
+      time: null
+    })
+  });
+  f.proteins.forEach(id => out.push({
+    key: "p" + id,
+    label: PROTEINS.find(p => p.id === id).label,
+    remove: p => ({
+      ...p,
+      proteins: p.proteins.filter(x => x !== id)
+    })
+  }));
+  f.moods.forEach(id => out.push({
+    key: "m" + id,
+    label: MOODS.find(m => m.id === id).label,
+    remove: p => ({
+      ...p,
+      moods: p.moods.filter(x => x !== id)
+    })
+  }));
+  if (f.serve) out.push({
+    key: "serve",
+    label: SERVES.find(x => x.id === f.serve).label,
+    remove: p => ({
+      ...p,
+      serve: null
+    })
+  });
+  if (f.lunchbox) out.push({
+    key: "lunch",
+    label: "Pour les gamelles",
+    remove: p => ({
+      ...p,
+      lunchbox: false
+    })
+  });
+  return out;
+}
 const uid = () => "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const norm = s => (s || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 function fmtTime(t) {
@@ -255,7 +392,8 @@ function buildSeed() {
     reheats: !!s[5],
     seasons: s[6].split(""),
     ingredients: s[7].split("|"),
-    custom: false
+    custom: false,
+    ...seedExtras(i + 1)
   }));
 }
 function sanitize(r) {
@@ -269,6 +407,8 @@ function sanitize(r) {
     reheats: !!r.reheats,
     seasons: Array.isArray(r.seasons) ? r.seasons.filter(s => ["P", "E", "A", "H"].includes(s)) : [],
     ingredients: Array.isArray(r.ingredients) ? r.ingredients.map(x => String(x).trim()).filter(Boolean) : [],
+    mood: Array.isArray(r.mood) ? r.mood.filter(m => MOODS.some(x => x.id === m)) : [],
+    serve: SERVES.some(x => x.id === r.serve) ? r.serve : "chaud",
     custom: !!r.custom
   };
 }
@@ -356,6 +496,13 @@ const PATHS = {
   upload: React.createElement("path", {
     d: "M12 16V5M7 9.5l5-5 5 5M5 20h14"
   }),
+  sliders: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M14 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M4 6h10M18 6h2"
+  }), React.createElement("path", {
+    d: "M6 12a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M4 12h2M10 12h10"
+  }), React.createElement("path", {
+    d: "M15 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M4 18h11M19 18h1"
+  })),
   bowl: React.createElement("path", {
     d: "M4 8h16a1 1 0 0 1 1 1v.5c0 1.5 -2.517 5.573 -4 6.5v1a1 1 0 0 1 -1 1h-8a1 1 0 0 1 -1 -1v-1c-1.687 -1.054 -4 -5 -4 -6.5v-.5a1 1 0 0 1 1 -1"
   }),
@@ -519,7 +666,12 @@ function Detail({
   }, React.createElement(Icon, {
     name: "check",
     size: 16
-  }), "Se réchauffe bien")), React.createElement("h3", {
+  }), "Se réchauffe bien"), r.mood.map(m => React.createElement("span", {
+    className: "pill",
+    key: m
+  }, MOODS.find(x => x.id === m).label)), r.serve !== "chaud" && React.createElement("span", {
+    className: "pill"
+  }, r.serve === "froid" ? "Se mange froid" : "Chaud ou froid")), React.createElement("h3", {
     className: "section-title"
   }, "Ingrédients"), r.ingredients.length ? React.createElement("ul", {
     className: "ings"
@@ -545,11 +697,26 @@ function Detail({
     name: "edit"
   })))));
 }
+function Switch({
+  on,
+  onClick,
+  label
+}) {
+  return React.createElement("button", {
+    type: "button",
+    role: "switch",
+    "aria-checked": on,
+    "aria-label": label,
+    className: "switch" + (on ? " on" : ""),
+    onClick: onClick
+  }, React.createElement("span", null));
+}
 function Choice({
   options,
   value,
   onChange,
-  multi
+  multi,
+  toggle
 }) {
   return React.createElement("div", {
     className: "choice"
@@ -560,8 +727,13 @@ function Choice({
       key: o.id,
       className: "chip small" + (on ? " on" : ""),
       "aria-pressed": on,
-      onClick: () => onChange(multi ? on ? value.filter(v => v !== o.id) : [...value, o.id] : o.id)
-    }, o.icon && React.createElement(Icon, {
+      onClick: () => onChange(multi ? on ? value.filter(v => v !== o.id) : [...value, o.id] : toggle && on ? null : o.id)
+    }, o.dot && React.createElement("span", {
+      className: "dot",
+      style: {
+        background: o.dot
+      }
+    }), o.icon && React.createElement(Icon, {
       name: o.icon,
       size: 17
     }), o.label);
@@ -577,7 +749,8 @@ function Form({
   const [d, setD] = useState(() => initial ? {
     ...initial,
     ingredients: [...initial.ingredients],
-    seasons: [...initial.seasons]
+    seasons: [...initial.seasons],
+    mood: [...initial.mood]
   } : {
     name: presetName || "",
     family: "",
@@ -586,7 +759,9 @@ function Form({
     difficulty: "Facile",
     reheats: false,
     seasons: [],
-    ingredients: []
+    ingredients: [],
+    mood: [],
+    serve: "chaud"
   });
   const [ing, setIng] = useState("");
   const [errors, setErrors] = useState({});
@@ -756,10 +931,30 @@ function Form({
   }, React.createElement("span", {
     className: "flabel"
   }, "Base du plat"), React.createElement(Choice, {
-    options: PROTEINS,
+    toggle: true,
+    options: PROTEINS.map(p => ({
+      id: p.id,
+      label: p.label,
+      dot: p.ink
+    })),
     value: d.protein,
-    onChange: v => set("protein", d.protein === v ? "" : v)
+    onChange: v => set("protein", v || "")
   })), React.createElement("div", {
+    className: "field two"
+  }, React.createElement("div", null, React.createElement("span", {
+    className: "flabel"
+  }, "Ambiance"), React.createElement(Choice, {
+    multi: true,
+    options: MOODS,
+    value: d.mood,
+    onChange: v => set("mood", v)
+  })), React.createElement("div", null, React.createElement("span", {
+    className: "flabel"
+  }, "Se mange"), React.createElement(Choice, {
+    options: SERVES,
+    value: d.serve,
+    onChange: v => set("serve", v)
+  }))), React.createElement("div", {
     className: "field"
   }, React.createElement("span", {
     className: "flabel"
@@ -796,6 +991,100 @@ function Form({
     onClick: save
   }, "Enregistrer"))));
 }
+function FilterSheet({
+  f,
+  setF,
+  count,
+  seasonsNow,
+  onClose
+}) {
+  const up = (k, v) => setF(p => ({
+    ...p,
+    [k]: v
+  }));
+  const season = seasonText(seasonsNow);
+  return React.createElement(React.Fragment, null, React.createElement("div", {
+    className: "form-head"
+  }, React.createElement("h2", {
+    className: "sheet-title"
+  }, "Filtres"), React.createElement("button", {
+    className: "round-btn light",
+    onClick: onClose,
+    "aria-label": "Fermer"
+  }, React.createElement(Icon, {
+    name: "x"
+  }))), React.createElement("div", {
+    className: "sheet-body form"
+  }, React.createElement("div", {
+    className: "field"
+  }, React.createElement("span", {
+    className: "flabel"
+  }, "Temps disponible"), React.createElement(Choice, {
+    toggle: true,
+    options: TIMES,
+    value: f.time,
+    onChange: v => up("time", v)
+  })), React.createElement("div", {
+    className: "field"
+  }, React.createElement("span", {
+    className: "flabel"
+  }, "Base du plat"), React.createElement(Choice, {
+    multi: true,
+    options: PROTEINS.map(p => ({
+      id: p.id,
+      label: p.label,
+      dot: p.ink
+    })),
+    value: f.proteins,
+    onChange: v => up("proteins", v)
+  })), React.createElement("div", {
+    className: "field two"
+  }, React.createElement("div", null, React.createElement("span", {
+    className: "flabel"
+  }, "Ambiance"), React.createElement(Choice, {
+    multi: true,
+    options: MOODS,
+    value: f.moods,
+    onChange: v => up("moods", v)
+  })), React.createElement("div", null, React.createElement("span", {
+    className: "flabel"
+  }, "Chaud ou froid"), React.createElement(Choice, {
+    toggle: true,
+    options: SERVES.filter(x => x.id !== "both"),
+    value: f.serve,
+    onChange: v => up("serve", v)
+  }))), React.createElement("div", {
+    className: "field switch-row"
+  }, React.createElement("div", null, React.createElement("span", {
+    className: "switch-label"
+  }, "De saison"), React.createElement("p", {
+    className: "hint"
+  }, season.charAt(0).toUpperCase() + season.slice(1), " en ce moment")), React.createElement(Switch, {
+    on: f.seasonal,
+    label: "De saison",
+    onClick: () => up("seasonal", !f.seasonal)
+  })), React.createElement("div", {
+    className: "field switch-row"
+  }, React.createElement("div", null, React.createElement("span", {
+    className: "switch-label"
+  }, "Pour les gamelles"), React.createElement("p", {
+    className: "hint"
+  }, "Plats qui se réchauffent bien")), React.createElement(Switch, {
+    on: f.lunchbox,
+    label: "Pour les gamelles",
+    onClick: () => up("lunchbox", !f.lunchbox)
+  }))), React.createElement("div", {
+    className: "form-foot"
+  }, React.createElement("button", {
+    type: "button",
+    className: "btn ghost",
+    onClick: () => setF(EMPTY_FILTERS)
+  }, "Tout effacer"), React.createElement("button", {
+    type: "button",
+    className: "btn primary",
+    onClick: onClose
+  }, count ? "Voir " + count + (count > 1 ? " idées" : " idée") : "Aucune idée")));
+}
 function App() {
   const [data, setData] = useState(null);
   const [family, setFamily] = useState("all");
@@ -803,6 +1092,8 @@ function App() {
   const [sheet, setSheet] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState("");
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const seasonsNow = useMemo(nowSeasons, []);
   const fileRef = useRef(null);
   const toastTimer = useRef(null);
   useEffect(() => {
@@ -811,7 +1102,7 @@ function App() {
       if (!alive) return;
       if (d && Array.isArray(d.recipes)) {
         setData({
-          recipes: d.recipes.map(sanitize).filter(r => r.name),
+          recipes: d.recipes.map(withSeedDefaults).map(sanitize).filter(r => r.name),
           deleted: Array.isArray(d.deleted) ? d.deleted : []
         });
       } else {
@@ -853,10 +1144,12 @@ function App() {
     });
   };
   const recipes = data ? data.recipes : [];
-  const list = useMemo(() => {
+  const baseList = useMemo(() => {
     const q = norm(query);
     return recipes.filter(r => (family === "all" || r.family === family) && (!q || norm(r.name).includes(q) || r.ingredients.some(i => norm(i).includes(q)))).sort((a, b) => a.name.localeCompare(b.name, "fr"));
   }, [recipes, family, query]);
+  const list = useMemo(() => baseList.filter(r => matchFilters(r, filters, seasonsNow)), [baseList, filters, seasonsNow]);
+  const actives = activeFilters(filters);
   const current = sheet && sheet.id ? recipes.find(r => r.id === sheet.id) : null;
   const saveRecipe = draft => {
     const clean = sanitize(draft);
@@ -917,7 +1210,7 @@ function App() {
       try {
         const d = JSON.parse(reader.result);
         if (!d || !Array.isArray(d.recipes)) throw new Error("format");
-        const rec = d.recipes.map(sanitize).filter(r => r.name);
+        const rec = d.recipes.map(withSeedDefaults).map(sanitize).filter(r => r.name);
         if (!rec.length) throw new Error("vide");
         commit({
           recipes: rec,
@@ -963,7 +1256,17 @@ function App() {
   }, React.createElement(Icon, {
     name: "x",
     size: 16
-  }))), React.createElement("div", {
+  }))), React.createElement("button", {
+    className: "round-btn light",
+    onClick: () => setSheet({
+      mode: "filters"
+    }),
+    "aria-label": "Filtres"
+  }, React.createElement(Icon, {
+    name: "sliders"
+  }), actives.length > 0 && React.createElement("span", {
+    className: "badge"
+  }, actives.length)), React.createElement("div", {
     className: "menu-wrap"
   }, React.createElement("button", {
     className: "round-btn light",
@@ -1017,7 +1320,19 @@ function App() {
     key: f.id,
     className: "chip" + (family === f.id ? " on" : ""),
     onClick: () => setFamily(f.id)
-  }, f.label))), list.length ? React.createElement("div", {
+  }, f.label))), actives.length > 0 && React.createElement("div", {
+    className: "active-bar"
+  }, React.createElement("span", {
+    className: "result-count"
+  }, list.length, " ", list.length > 1 ? "idées" : "idée"), actives.map(a => React.createElement("button", {
+    key: a.key,
+    className: "active-pill",
+    onClick: () => setFilters(a.remove),
+    "aria-label": "Retirer le filtre " + a.label
+  }, a.label, React.createElement(Icon, {
+    name: "x",
+    size: 14
+  })))), list.length ? React.createElement("div", {
     className: "grid"
   }, list.map(r => React.createElement(Card, {
     key: r.id,
@@ -1028,7 +1343,14 @@ function App() {
     })
   }))) : React.createElement("div", {
     className: "empty"
-  }, query ? React.createElement(React.Fragment, null, React.createElement("p", {
+  }, baseList.length > 0 ? React.createElement(React.Fragment, null, React.createElement("p", {
+    className: "empty-title"
+  }, "Aucune idée avec ces filtres"), React.createElement("p", {
+    className: "muted"
+  }, "Retire un filtre pour élargir les propositions."), React.createElement("button", {
+    className: "btn primary",
+    onClick: () => setFilters(EMPTY_FILTERS)
+  }, "Retirer les filtres")) : query ? React.createElement(React.Fragment, null, React.createElement("p", {
     className: "empty-title"
   }, "Rien pour « ", query.trim(), " »"), React.createElement("p", {
     className: "muted"
@@ -1074,6 +1396,15 @@ function App() {
     }),
     onSave: saveRecipe,
     onDelete: deleteRecipe
+  })), sheet && sheet.mode === "filters" && React.createElement(Sheet, {
+    onClose: () => setSheet(null),
+    closeOnBackdrop: true
+  }, React.createElement(FilterSheet, {
+    f: filters,
+    setF: setFilters,
+    count: list.length,
+    seasonsNow: seasonsNow,
+    onClose: () => setSheet(null)
   })), sheet && sheet.mode === "new" && React.createElement(Sheet, {
     onClose: () => setSheet(null)
   }, React.createElement(Form, {
