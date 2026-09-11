@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="L'Ardoise">
+<meta name="theme-color" content="#F6F5F2">
+<title>L'Ardoise</title>
+<style>
+:root{
+  --bg:#F6F5F2;--surface:#FFFFFF;--ink:#1D1D1B;--ink2:#6B6862;--ink3:#9E9A93;
+  --line:rgba(29,29,27,.09);--line2:rgba(29,29,27,.16);
+  --green:#E3F0D8;--green-ink:#2F5A12;--danger:#B3261E;--danger-bg:#FBE9E7;
+  --r-card:16px;--r-sheet:26px;
+  --round:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+  --pad:28px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.loading{padding:48px;color:var(--ink3);text-align:center}
+.app{max-width:1200px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 32px) calc(env(safe-area-inset-right) + var(--pad)) calc(env(safe-area-inset-bottom) + 56px) calc(env(safe-area-inset-left) + var(--pad))}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:22px}
+.title{font-family:var(--round);font-size:36px;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin:0}
+.count{color:var(--ink3);font-size:15px;margin:6px 0 0}
+.tools{display:flex;gap:10px;align-items:center}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:0 12px 0 14px;height:46px;width:270px;color:var(--ink3)}
+.search input{border:0;outline:0;background:none;font:inherit;font-size:16px;width:100%;color:var(--ink);-webkit-appearance:none;appearance:none}
+.search input::-webkit-search-cancel-button{display:none}
+.clear{color:var(--ink3);display:grid;place-items:center;width:26px;height:26px;border-radius:50%}
+.round-btn{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;flex:none}
+.round-btn.dark{background:var(--ink);color:#fff}
+.round-btn.light{background:var(--surface);border:1px solid var(--line)}
+.round-btn.on-color{background:rgba(255,255,255,.75);width:40px;height:40px}
+.round-btn.big{width:50px;height:50px}
+.menu-wrap{position:relative}
+.menu-scrim{position:fixed;inset:0;z-index:5}
+.menu{position:absolute;right:0;top:54px;z-index:6;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px;min-width:250px;box-shadow:0 12px 32px rgba(29,29,27,.12)}
+.menu button{display:flex;align-items:center;gap:10px;width:100%;padding:12px;border-radius:10px;font-size:15px;text-align:left}
+.menu button:active{background:var(--bg)}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:0 calc(var(--pad) * -1) 26px;padding:0 var(--pad) 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{height:40px;padding:0 17px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink2);font-size:15px;white-space:nowrap;flex:none;display:inline-flex;align-items:center;gap:6px}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.small{height:36px;padding:0 14px;font-size:14px}
+.chip.static{cursor:default;padding-right:6px;color:var(--ink)}
+.chip-x{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:var(--ink3)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
+.card{background:var(--surface);border-radius:var(--r-card);overflow:hidden;border:1px solid var(--line);text-align:left;display:flex;flex-direction:column;transition:transform .15s ease}
+.card:active{transform:scale(.97)}
+.tile{height:92px;display:grid;place-items:center}
+.card-body{padding:12px 15px 15px}
+.card-name{font-size:16px;font-weight:560;line-height:1.3;margin:0}
+.card-meta{font-size:13px;color:var(--ink3);margin:5px 0 0}
+.empty{text-align:center;padding:64px 20px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.empty-title{font-family:var(--round);font-size:22px;font-weight:600;margin:0}
+.empty .btn{margin-top:14px}
+.muted{color:var(--ink2);font-size:15px;margin:0}
+.overlay{position:fixed;inset:0;z-index:20;background:rgba(24,24,22,.4);display:flex;align-items:center;justify-content:center;padding:24px;animation:fade .18s ease}
+.sheet{background:var(--surface);border-radius:var(--r-sheet);width:100%;max-width:560px;max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);overflow:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;animation:rise .24s cubic-bezier(.2,.8,.2,1)}
+@keyframes fade{from{opacity:0}}
+@keyframes rise{from{transform:translateY(28px);opacity:0}}
+.hero{height:120px;display:grid;place-items:center;position:relative;flex:none}
+.hero .round-btn{position:absolute;top:14px;right:14px}
+.sheet-body{padding:22px 26px 26px}
+.fam-label{font-size:14px;color:var(--ink3);margin:0 0 4px}
+.sheet-title{font-family:var(--round);font-size:26px;font-weight:700;letter-spacing:-.015em;line-height:1.2;margin:0}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 24px}
+.pill{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;background:var(--bg);color:var(--ink2);font-size:14px}
+.pill.green{background:var(--green);color:var(--green-ink)}
+.section-title{font-size:16px;font-weight:600;margin:0 0 4px}
+.ings{list-style:none;padding:0;margin:0 0 26px;columns:2;column-gap:28px}
+.ings li{padding:11px 0;border-bottom:1px solid var(--line);font-size:16px;break-inside:avoid}
+.actions{display:flex;gap:10px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:999px;font-size:15px;font-weight:500;text-decoration:none;white-space:nowrap}
+.btn.primary{background:var(--ink);color:#fff}
+.btn.secondary{background:var(--surface);border:1px solid var(--line2);color:var(--ink)}
+.btn.ghost-danger{color:var(--danger);padding:0 12px}
+.btn.danger{background:var(--danger-bg);color:var(--danger)}
+.btn.grow{flex:1}
+.btn:active{transform:scale(.98)}
+.form-head{display:flex;justify-content:space-between;align-items:center;padding:22px 26px 0}
+.form .field{margin-bottom:24px}
+.field.two{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start}
+.flabel{display:block;font-size:14px;color:var(--ink2);margin:0 0 9px}
+.flabel.inline{margin:0}
+.text{height:48px;border:1px solid var(--line2);border-radius:14px;padding:0 14px;font:inherit;font-size:16px;width:100%;background:var(--surface);color:var(--ink);outline:0}
+.text:focus{border-color:var(--ink)}
+.text.invalid{border-color:var(--danger)}
+.err{color:var(--danger);font-size:13px;margin:7px 0 0}
+.choice{display:flex;flex-wrap:wrap;gap:8px}
+.ing-row{display:flex;gap:8px}
+.ing-chips{margin-top:12px}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:999px;height:44px;padding:0 4px}
+.stepper button{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--ink2)}
+.stepper input{width:44px;border:0;outline:0;text-align:center;font:inherit;font-size:16px;background:none;color:var(--ink);-moz-appearance:textfield}
+.stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.unit{color:var(--ink3);font-size:14px;margin-right:4px}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.switch{width:52px;height:32px;border-radius:999px;background:var(--line2);position:relative;transition:background .2s;flex:none}
+.switch span{position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+.switch.on{background:#34C759}
+.switch.on span{transform:translateX(20px)}
+.form-foot{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:14px 26px calc(14px + env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:auto}
+.foot-right{display:flex;gap:8px}
+.toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-size:15px;z-index:40;animation:rise .2s ease}
+@media (max-width:640px){
+  :root{--pad:18px}
+  .title{font-size:30px}
+  .tools{width:100%}
+  .search{flex:1;width:auto}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .tile{height:80px}
+  .overlay{align-items:flex-end;padding:0}
+  .sheet{border-radius:var(--r-sheet) var(--r-sheet) 0 0;max-height:94vh;max-height:94dvh}
+  .ings{columns:1}
+  .field.two{grid-template-columns:1fr}
+  .btn{padding:0 16px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+const {
+  useState,
+  useEffect,
+  useMemo,
+  useRef
+} = React;
+const STORAGE_KEY = "lardoise-v2";
+const FAMILIES = [{
+  id: "pates",
+  label: "Pâtes",
+  icon: "bowl"
+}, {
+  id: "gratins",
+  label: "Gratins",
+  icon: "cheese"
+}, {
+  id: "mijotes",
+  label: "Mijotés",
+  icon: "flame"
+}, {
+  id: "tartes",
+  label: "Tartes et quiches",
+  icon: "pie"
+}, {
+  id: "pizzas",
+  label: "Pizzas et co",
+  icon: "pizza"
+}, {
+  id: "soupes",
+  label: "Soupes",
+  icon: "soup"
+}, {
+  id: "poelees",
+  label: "Poêlées",
+  icon: "egg"
+}, {
+  id: "riz",
+  label: "Riz et risottos",
+  icon: "rice"
+}, {
+  id: "four",
+  label: "Au four",
+  icon: "oven"
+}, {
+  id: "frais",
+  label: "Assiettes fraîches",
+  icon: "salad"
+}];
+const famOf = id => FAMILIES.find(f => f.id === id) || FAMILIES[0];
+const PROTEINS = [{
+  id: "rouge",
+  label: "Viande rouge",
+  bg: "#FAECE7",
+  ink: "#993C1D"
+}, {
+  id: "blanche",
+  label: "Viande blanche",
+  bg: "#FAEEDA",
+  ink: "#854F0B"
+}, {
+  id: "poisson",
+  label: "Poisson",
+  bg: "#E6F1FB",
+  ink: "#185FA5"
+}, {
+  id: "oeufs",
+  label: "Œufs",
+  bg: "#FBF4D6",
+  ink: "#7A5C00"
+}, {
+  id: "legumineuses",
+  label: "Légumineuses",
+  bg: "#E1F5EE",
+  ink: "#0F6E56"
+}, {
+  id: "vege",
+  label: "Végétarien",
+  bg: "#EAF3DE",
+  ink: "#3B6D11"
+}];
+const NEUTRAL = {
+  bg: "#F1EFE8",
+  ink: "#5F5E5A"
+};
+const colorOf = protein => PROTEINS.find(p => p.id === protein) || NEUTRAL;
+const SEASONS = [{
+  id: "P",
+  label: "Printemps"
+}, {
+  id: "E",
+  label: "Été"
+}, {
+  id: "A",
+  label: "Automne"
+}, {
+  id: "H",
+  label: "Hiver"
+}];
+const DIFFS = ["Facile", "Moyen", "Élaboré"];
+const DIFF_CODE = {
+  F: "Facile",
+  M: "Moyen",
+  E: "Élaboré"
+};
+const SEED = [["Pâtes carbonara", "pates", "blanche", 20, "F", 0, "PEAH", "Spaghetti|Lardons|Œufs|Parmesan|Poivre"], ["Tagliatelles aux champignons et à la crème", "pates", "vege", 25, "F", 1, "AH", "Tagliatelles|Champignons de Paris|Crème fraîche|Ail|Persil|Parmesan"], ["Pâtes saumon-épinards", "pates", "poisson", 25, "F", 1, "PAH", "Penne|Saumon|Épinards|Crème fraîche|Citron"], ["Spaghetti bolognaise", "pates", "rouge", 40, "F", 1, "PEAH", "Spaghetti|Bœuf haché|Tomates concassées|Oignon|Carotte|Parmesan"], ["One pot pasta tomates cerises et mozzarella", "pates", "vege", 20, "F", 0, "E", "Pâtes|Tomates cerises|Mozzarella|Basilic|Ail"], ["Pâtes au pesto et poulet", "pates", "blanche", 20, "F", 1, "PE", "Pâtes|Pesto|Blancs de poulet|Parmesan|Pignons de pin"], ["Pâtes à la butternut et lardons", "pates", "blanche", 30, "F", 1, "AH", "Pâtes|Courge butternut|Lardons|Crème fraîche|Parmesan"], ["Pâtes au thon, tomate et câpres", "pates", "poisson", 20, "F", 1, "PEAH", "Pâtes|Thon en boîte|Tomates concassées|Câpres|Oignon"], ["Pâtes poireaux et chèvre", "pates", "vege", 25, "F", 1, "AH", "Pâtes|Poireaux|Fromage de chèvre|Crème fraîche"], ["Gnocchis sauce gorgonzola et noix", "pates", "vege", 20, "F", 0, "AH", "Gnocchis|Gorgonzola|Crème fraîche|Noix|Épinards"], ["Pâtes à la saucisse et au brocoli", "pates", "blanche", 25, "F", 1, "AH", "Pâtes courtes|Saucisses|Brocoli|Ail|Parmesan"], ["Lasagnes bolognaise", "gratins", "rouge", 75, "M", 1, "AH", "Feuilles de lasagne|Bœuf haché|Tomates concassées|Béchamel|Emmental"], ["Hachis parmentier", "gratins", "rouge", 60, "F", 1, "AH", "Pommes de terre|Bœuf haché|Oignon|Lait|Beurre|Emmental"], ["Gratin de coquillettes au jambon", "gratins", "blanche", 35, "F", 1, "AH", "Coquillettes|Jambon|Crème fraîche|Emmental"], ["Gratin dauphinois et jambon", "gratins", "blanche", 75, "F", 1, "AH", "Pommes de terre|Crème fraîche|Lait|Ail|Jambon"], ["Tartiflette", "gratins", "blanche", 50, "F", 1, "H", "Pommes de terre|Reblochon|Lardons|Oignons|Crème fraîche"], ["Endives au jambon", "gratins", "blanche", 50, "F", 1, "H", "Endives|Jambon|Béchamel|Emmental"], ["Gratin de courgettes", "gratins", "oeufs", 45, "F", 1, "E", "Courgettes|Œufs|Crème fraîche|Gruyère râpé"], ["Gratin de chou-fleur", "gratins", "vege", 45, "F", 1, "AH", "Chou-fleur|Béchamel|Emmental|Muscade"], ["Parmentier de poisson", "gratins", "poisson", 50, "F", 1, "AH", "Pommes de terre|Cabillaud|Lait|Beurre|Emmental"], ["Aubergines à la parmigiana", "gratins", "vege", 60, "M", 1, "E", "Aubergines|Tomates concassées|Mozzarella|Parmesan|Basilic"], ["Gratin de patates douces et poireaux", "gratins", "vege", 50, "F", 1, "AH", "Patates douces|Poireaux|Crème fraîche|Comté"], ["Chili con carne", "mijotes", "rouge", 60, "F", 1, "AH", "Bœuf haché|Haricots rouges|Tomates concassées|Oignon|Poivron|Épices chili|Riz"], ["Chili sin carne", "mijotes", "legumineuses", 45, "F", 1, "AH", "Haricots rouges|Maïs|Tomates concassées|Oignon|Épices chili|Riz"], ["Bœuf bourguignon", "mijotes", "rouge", 180, "M", 1, "AH", "Bœuf à braiser|Vin rouge|Carottes|Lardons|Champignons|Oignons"], ["Blanquette de veau", "mijotes", "blanche", 120, "M", 1, "AH", "Veau|Carottes|Champignons|Crème fraîche|Oignon|Riz"], ["Poulet basquaise", "mijotes", "blanche", 60, "F", 1, "EA", "Poulet|Poivrons|Tomates|Oignon|Riz"], ["Curry de poulet au lait de coco", "mijotes", "blanche", 40, "F", 1, "PEAH", "Poulet|Lait de coco|Curry|Oignon|Riz"], ["Dahl de lentilles corail", "mijotes", "legumineuses", 35, "F", 1, "AH", "Lentilles corail|Lait de coco|Tomates concassées|Oignon|Épices|Riz"], ["Petit salé aux lentilles", "mijotes", "blanche", 90, "F", 1, "H", "Petit salé|Lentilles vertes|Carottes|Oignon"], ["Porc au caramel", "mijotes", "blanche", 40, "F", 1, "PEAH", "Échine de porc|Sauce soja|Sucre|Oignon|Riz"], ["Pot-au-feu", "mijotes", "rouge", 180, "F", 1, "H", "Bœuf pot-au-feu|Carottes|Poireaux|Navets|Pommes de terre"], ["Curry de pois chiches aux épinards", "mijotes", "legumineuses", 30, "F", 1, "PAH", "Pois chiches|Épinards|Lait de coco|Tomates concassées|Curry|Riz"], ["Rougail saucisse", "mijotes", "blanche", 50, "F", 1, "PEAH", "Saucisses fumées|Tomates concassées|Oignon|Piment|Riz"], ["Poulet aux champignons et à la crème", "mijotes", "blanche", 35, "F", 1, "AH", "Poulet|Champignons|Crème fraîche|Oignon|Riz"], ["Carbonnade flamande", "mijotes", "rouge", 150, "M", 1, "H", "Bœuf à braiser|Bière brune|Oignons|Pain d'épices|Frites"], ["Boulettes de bœuf à la tomate", "mijotes", "rouge", 40, "F", 1, "PEAH", "Bœuf haché|Tomates concassées|Oignon|Chapelure|Pâtes ou riz"], ["Quiche lorraine", "tartes", "oeufs", 50, "F", 1, "PEAH", "Pâte brisée|Lardons|Œufs|Crème fraîche|Emmental"], ["Quiche poireaux et saumon", "tartes", "poisson", 50, "F", 1, "AH", "Pâte brisée|Poireaux|Saumon|Œufs|Crème fraîche"], ["Quiche courgettes et chèvre", "tartes", "oeufs", 50, "F", 1, "E", "Pâte brisée|Courgettes|Fromage de chèvre|Œufs|Crème fraîche"], ["Tarte thon, tomate et moutarde", "tartes", "poisson", 45, "F", 1, "E", "Pâte brisée|Thon en boîte|Tomates|Moutarde|Emmental"], ["Tarte butternut et feta", "tartes", "vege", 50, "F", 1, "AH", "Pâte feuilletée|Courge butternut|Feta|Œufs|Crème fraîche"], ["Flammekueche", "tartes", "blanche", 25, "F", 0, "PEAH", "Pâte à pizza fine|Crème fraîche|Lardons|Oignons"], ["Quiche épinards et feta", "tartes", "oeufs", 50, "F", 1, "P", "Pâte brisée|Épinards|Feta|Œufs|Crème fraîche"], ["Tarte aux champignons et comté", "tartes", "vege", 45, "F", 1, "A", "Pâte feuilletée|Champignons|Comté|Œufs|Crème fraîche"], ["Tarte tomate et mozzarella", "tartes", "vege", 40, "F", 0, "E", "Pâte feuilletée|Tomates|Mozzarella|Moutarde|Basilic"], ["Pizza jambon-champignons", "pizzas", "blanche", 30, "F", 0, "PEAH", "Pâte à pizza|Sauce tomate|Jambon|Champignons|Mozzarella"], ["Pizza chèvre et miel", "pizzas", "vege", 25, "F", 0, "PEAH", "Pâte à pizza|Crème fraîche|Fromage de chèvre|Miel|Noix"], ["Pizza aux légumes grillés", "pizzas", "vege", 35, "F", 0, "E", "Pâte à pizza|Sauce tomate|Courgette|Poivron|Aubergine|Mozzarella"], ["Croque-monsieur et salade", "pizzas", "blanche", 20, "F", 0, "PEAH", "Pain de mie|Jambon|Emmental|Béchamel|Salade verte"], ["Galettes complètes", "pizzas", "oeufs", 20, "F", 0, "PEAH", "Galettes de sarrasin|Jambon|Œufs|Emmental"], ["Burgers maison", "pizzas", "rouge", 30, "F", 0, "PEAH", "Pains à burger|Steaks hachés|Cheddar|Oignon|Tomate|Salade"], ["Raclette", "pizzas", "blanche", 20, "F", 0, "H", "Fromage à raclette|Pommes de terre|Charcuterie|Cornichons"], ["Pizza chorizo et poivrons", "pizzas", "blanche", 30, "F", 0, "EA", "Pâte à pizza|Sauce tomate|Chorizo|Poivrons|Mozzarella"], ["Velouté de potimarron", "soupes", "vege", 35, "F", 1, "AH", "Potimarron|Oignon|Crème fraîche|Bouillon de légumes"], ["Soupe de légumes et croûtons", "soupes", "vege", 40, "F", 1, "AH", "Poireaux|Carottes|Pommes de terre|Oignon|Pain"], ["Soupe à l'oignon gratinée", "soupes", "vege", 60, "M", 1, "H", "Oignons|Bouillon|Pain|Emmental|Beurre"], ["Soupe lentilles corail et carottes", "soupes", "legumineuses", 30, "F", 1, "AH", "Lentilles corail|Carottes|Lait de coco|Cumin|Oignon"], ["Minestrone", "soupes", "legumineuses", 45, "F", 1, "PE", "Courgettes|Carottes|Haricots blancs|Petites pâtes|Tomates concassées|Parmesan"], ["Velouté poireaux et pommes de terre", "soupes", "vege", 35, "F", 1, "AH", "Poireaux|Pommes de terre|Crème fraîche|Bouillon"], ["Gaspacho et tartines", "soupes", "vege", 15, "F", 0, "E", "Tomates|Concombre|Poivron|Ail|Pain"], ["Velouté de champignons", "soupes", "vege", 30, "F", 1, "A", "Champignons|Oignon|Crème fraîche|Bouillon"], ["Fondue de poireaux et saumon", "poelees", "poisson", 30, "F", 1, "AH", "Poireaux|Pavés de saumon|Crème fraîche|Beurre"], ["Fajitas au poulet", "poelees", "blanche", 30, "F", 0, "EA", "Tortillas|Poulet|Poivrons|Oignon|Crème fraîche|Cheddar"], ["Wok de bœuf et nouilles", "poelees", "rouge", 25, "F", 1, "PEAH", "Bœuf|Nouilles|Carottes|Oignon|Sauce soja"], ["Tortilla espagnole", "poelees", "oeufs", 35, "F", 1, "PEAH", "Œufs|Pommes de terre|Oignon"], ["Steak haché et purée maison", "poelees", "rouge", 35, "F", 0, "PEAH", "Steaks hachés|Pommes de terre|Lait|Beurre"], ["Poêlée campagnarde et œuf au plat", "poelees", "oeufs", 30, "F", 0, "AH", "Pommes de terre|Lardons|Oignons|Œufs"], ["Omelette aux champignons", "poelees", "oeufs", 15, "F", 0, "A", "Œufs|Champignons|Persil|Gruyère râpé"], ["Gnocchis poêlés chorizo et poivrons", "poelees", "blanche", 20, "F", 0, "E", "Gnocchis|Chorizo|Poivrons|Oignon"], ["Poulet à la moutarde et riz", "poelees", "blanche", 30, "F", 1, "PEAH", "Escalopes de poulet|Moutarde|Crème fraîche|Riz"], ["Shakshuka", "poelees", "oeufs", 30, "F", 0, "EA", "Œufs|Tomates concassées|Poivrons|Oignon|Cumin|Pain"], ["Saucisses-purée", "poelees", "blanche", 35, "F", 0, "AH", "Saucisses de Toulouse|Pommes de terre|Oignons|Lait|Beurre"], ["Risotto aux champignons", "riz", "vege", 35, "M", 0, "A", "Riz arborio|Champignons|Parmesan|Bouillon|Vin blanc"], ["Riz cantonais", "riz", "oeufs", 25, "F", 1, "PEAH", "Riz|Œufs|Jambon|Petits pois|Oignon|Sauce soja"], ["Paella express", "riz", "poisson", 50, "M", 1, "E", "Riz|Crevettes|Chorizo|Poivron|Petits pois|Safran"], ["Risotto aux asperges", "riz", "vege", 35, "M", 0, "P", "Riz arborio|Asperges|Parmesan|Bouillon"], ["Poke bowl au saumon", "riz", "poisson", 25, "F", 0, "E", "Riz|Saumon|Avocat|Concombre|Sauce soja"], ["Risotto chorizo et petits pois", "riz", "blanche", 35, "M", 0, "P", "Riz arborio|Chorizo|Petits pois|Parmesan|Bouillon"], ["Saumon à la crème et riz", "four", "poisson", 25, "F", 1, "PEAH", "Pavés de saumon|Crème fraîche|Citron|Aneth|Riz"], ["Poulet rôti et pommes de terre", "four", "blanche", 75, "F", 1, "PEAH", "Poulet|Pommes de terre|Ail|Thym"], ["Cabillaud en papillote et légumes", "four", "poisson", 30, "F", 0, "PE", "Cabillaud|Courgettes|Tomates cerises|Citron|Riz"], ["Poisson pané et purée de carottes", "four", "poisson", 35, "F", 0, "AH", "Poisson pané|Carottes|Pommes de terre|Beurre"], ["Légumes rôtis, feta et pois chiches", "four", "legumineuses", 40, "F", 1, "AH", "Patates douces|Carottes|Oignon rouge|Pois chiches|Feta"], ["Tomates farcies et riz", "four", "blanche", 60, "F", 1, "E", "Tomates|Chair à saucisse|Oignon|Riz"], ["Courgettes farcies", "four", "blanche", 55, "F", 1, "E", "Courgettes rondes|Chair à saucisse|Riz|Parmesan"], ["Pommes de terre au four et fromage frais", "four", "vege", 60, "F", 0, "AH", "Grosses pommes de terre|Fromage frais ail et fines herbes|Ciboulette|Salade verte"], ["Filet mignon moutarde et pommes de terre", "four", "blanche", 50, "F", 1, "AH", "Filet mignon de porc|Moutarde|Crème fraîche|Pommes de terre"], ["Salade César", "frais", "blanche", 25, "F", 0, "E", "Salade romaine|Poulet|Parmesan|Croûtons|Sauce César"], ["Salade de pâtes à la grecque", "frais", "vege", 20, "F", 1, "E", "Pâtes|Tomates cerises|Feta|Olives|Concombre"], ["Taboulé et falafels", "frais", "legumineuses", 25, "F", 1, "E", "Boulgour|Tomates|Concombre|Menthe|Falafels"], ["Salade niçoise", "frais", "poisson", 25, "F", 0, "E", "Thon|Œufs|Tomates|Haricots verts|Olives|Pommes de terre"], ["Salade de lentilles et œufs mollets", "frais", "legumineuses", 25, "F", 1, "EA", "Lentilles vertes|Échalote|Moutarde|Œufs"], ["Salade pommes de terre et saumon fumé", "frais", "poisson", 25, "F", 1, "PE", "Pommes de terre|Saumon fumé|Crème fraîche|Ciboulette|Concombre"]];
+const uid = () => "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const norm = s => (s || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+function fmtTime(t) {
+  t = Number(t) || 0;
+  if (t < 60) return t + " min";
+  const h = Math.floor(t / 60),
+    m = t % 60;
+  return m ? h + " h " + String(m).padStart(2, "0") : h + " h";
+}
+function buildSeed() {
+  return SEED.map((s, i) => ({
+    id: "s" + (i + 1),
+    name: s[0],
+    family: s[1],
+    protein: s[2],
+    time: s[3],
+    difficulty: DIFF_CODE[s[4]],
+    reheats: !!s[5],
+    seasons: s[6].split(""),
+    ingredients: s[7].split("|"),
+    custom: false
+  }));
+}
+function sanitize(r) {
+  return {
+    id: String(r.id || uid()),
+    name: String(r.name || "").trim(),
+    family: FAMILIES.some(f => f.id === r.family) ? r.family : "pates",
+    protein: PROTEINS.some(p => p.id === r.protein) ? r.protein : "",
+    time: Math.max(1, parseInt(r.time, 10) || 30),
+    difficulty: DIFFS.includes(r.difficulty) ? r.difficulty : "Facile",
+    reheats: !!r.reheats,
+    seasons: Array.isArray(r.seasons) ? r.seasons.filter(s => ["P", "E", "A", "H"].includes(s)) : [],
+    ingredients: Array.isArray(r.ingredients) ? r.ingredients.map(x => String(x).trim()).filter(Boolean) : [],
+    custom: !!r.custom
+  };
+}
+const store = {
+  async load() {
+    try {
+      if (window.storage && window.storage.get) {
+        const r = await window.storage.get(STORAGE_KEY);
+        return r && r.value ? JSON.parse(r.value) : null;
+      }
+      const v = window.localStorage.getItem(STORAGE_KEY);
+      return v ? JSON.parse(v) : null;
+    } catch (e) {
+      return null;
+    }
+  },
+  async save(data) {
+    const s = JSON.stringify(data);
+    try {
+      if (window.storage && window.storage.set) {
+        const r = await window.storage.set(STORAGE_KEY, s);
+        return !!r;
+      }
+      window.localStorage.setItem(STORAGE_KEY, s);
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  }
+};
+const PATHS = {
+  search: React.createElement(React.Fragment, null, React.createElement("circle", {
+    cx: "11",
+    cy: "11",
+    r: "7"
+  }), React.createElement("path", {
+    d: "M20 20l-4-4"
+  })),
+  plus: React.createElement("path", {
+    d: "M12 5v14M5 12h14"
+  }),
+  minus: React.createElement("path", {
+    d: "M5 12h14"
+  }),
+  x: React.createElement("path", {
+    d: "M18 6L6 18M6 6l12 12"
+  }),
+  edit: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3"
+  }), React.createElement("path", {
+    d: "M13.5 7.5l3 3"
+  })),
+  clock: React.createElement(React.Fragment, null, React.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "9"
+  }), React.createElement("path", {
+    d: "M12 7v5l3 2"
+  })),
+  check: React.createElement("path", {
+    d: "M5 12.5l4.5 4.5L19 7.5"
+  }),
+  dots: React.createElement(React.Fragment, null, React.createElement("circle", {
+    cx: "5",
+    cy: "12",
+    r: "1.3"
+  }), React.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "1.3"
+  }), React.createElement("circle", {
+    cx: "19",
+    cy: "12",
+    r: "1.3"
+  })),
+  trash: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M4 7h16M10 11v6M14 11v6"
+  }), React.createElement("path", {
+    d: "M5.5 7l1 12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2l1-12M9 7V4.5h6V7"
+  })),
+  download: React.createElement("path", {
+    d: "M12 4v11M7 10.5l5 5 5-5M5 20h14"
+  }),
+  upload: React.createElement("path", {
+    d: "M12 16V5M7 9.5l5-5 5 5M5 20h14"
+  }),
+  bowl: React.createElement("path", {
+    d: "M4 8h16a1 1 0 0 1 1 1v.5c0 1.5 -2.517 5.573 -4 6.5v1a1 1 0 0 1 -1 1h-8a1 1 0 0 1 -1 -1v-1c-1.687 -1.054 -4 -5 -4 -6.5v-.5a1 1 0 0 1 1 -1"
+  }),
+  cheese: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M4.519 20.008l16.481 -.008v-3.5a2 2 0 1 1 0 -4v-3.5h-16.722"
+  }), React.createElement("path", {
+    d: "M21 9l-9.385 -4.992c-2.512 .12 -4.758 1.42 -6.327 3.425c-1.423 1.82 -2.288 4.221 -2.288 6.854c0 2.117 .56 4.085 1.519 5.721"
+  }), React.createElement("path", {
+    d: "M15 13v.01M8 13v.01M11 16v.01"
+  })),
+  flame: React.createElement("path", {
+    d: "M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.294 -2.333 5.588c0 3.704 3.134 6.706 7 6.706c3.866 0 7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"
+  }),
+  pie: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M10 3.2a9 9 0 1 0 10.8 10.8a1 1 0 0 0 -1 -1h-6.8a2 2 0 0 1 -2 -2v-7a.9 .9 0 0 0 -1 -.8"
+  }), React.createElement("path", {
+    d: "M15 3.5a9 9 0 0 1 5.5 5.5h-4.5a1 1 0 0 1 -1 -1v-4.5"
+  })),
+  pizza: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M12 21.5c-3.04 0 -5.952 -.714 -8.5 -1.983l8.5 -16.517l8.5 16.517a19.09 19.09 0 0 1 -8.5 1.983"
+  }), React.createElement("path", {
+    d: "M5.38 15.866a14.94 14.94 0 0 0 6.815 1.634a14.944 14.944 0 0 0 6.502 -1.479"
+  }), React.createElement("path", {
+    d: "M13 11.01v-.01M11 14v-.01"
+  })),
+  soup: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M4 11h16a1 1 0 0 1 1 1v.5c0 1.5 -2.517 5.573 -4 6.5v1a1 1 0 0 1 -1 1h-8a1 1 0 0 1 -1 -1v-1c-1.687 -1.054 -4 -5 -4 -6.5v-.5a1 1 0 0 1 1 -1"
+  }), React.createElement("path", {
+    d: "M12 4a2.4 2.4 0 0 0 -1 2a2.4 2.4 0 0 0 1 2M16 4a2.4 2.4 0 0 0 -1 2a2.4 2.4 0 0 0 1 2M8 4a2.4 2.4 0 0 0 -1 2a2.4 2.4 0 0 0 1 2"
+  })),
+  egg: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"
+  }), React.createElement("path", {
+    d: "M14 3a5 5 0 0 1 4.872 6.13a3 3 0 0 1 .178 5.681a3 3 0 1 1 -4.684 3.626a5 5 0 1 1 -8.662 -5a5 5 0 1 1 4.645 -8.856a4.982 4.982 0 0 1 3.651 -1.585l0 .004"
+  })),
+  rice: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M4 11h16a1 1 0 0 1 1 1v.5c0 1.5 -2.517 5.573 -4 6.5v1a1 1 0 0 1 -1 1h-8a1 1 0 0 1 -1 -1v-1c-1.687 -1.054 -4 -5 -4 -6.5v-.5a1 1 0 0 1 1 -1"
+  }), React.createElement("path", {
+    d: "M19 7l-14 1M19 2l-14 3"
+  })),
+  oven: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M12 7h.01M15 7h.01M9 7h.01"
+  }), React.createElement("path", {
+    d: "M5 5a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2l0 -14"
+  }), React.createElement("path", {
+    d: "M9 15h6M5 11h14"
+  })),
+  salad: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M4 11h16a1 1 0 0 1 1 1v.5c0 1.5 -2.517 5.573 -4 6.5v1a1 1 0 0 1 -1 1h-8a1 1 0 0 1 -1 -1v-1c-1.687 -1.054 -4 -5 -4 -6.5v-.5a1 1 0 0 1 1 -1"
+  }), React.createElement("path", {
+    d: "M18.5 11c.351 -1.017 .426 -2.236 .5 -3.714v-1.286h-2.256c-2.83 0 -4.616 .804 -5.64 2.076"
+  }), React.createElement("path", {
+    d: "M5.255 11.008a12.204 12.204 0 0 1 -.255 -2.008v-1h1.755c.98 0 1.801 .124 2.479 .35"
+  }), React.createElement("path", {
+    d: "M8 8l1 -4l4 2.5"
+  }), React.createElement("path", {
+    d: "M13 11v-.5a2.5 2.5 0 1 0 -5 0v.5"
+  }))
+};
+function Icon({
+  name,
+  size = 20,
+  stroke = 1.9
+}) {
+  return React.createElement("svg", {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: stroke,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": "true"
+  }, PATHS[name]);
+}
+function Card({
+  r,
+  onOpen
+}) {
+  const f = famOf(r.family),
+    c = colorOf(r.protein);
+  return React.createElement("button", {
+    className: "card",
+    onClick: onOpen
+  }, React.createElement("div", {
+    className: "tile",
+    style: {
+      background: c.bg,
+      color: c.ink
+    }
+  }, React.createElement(Icon, {
+    name: f.icon,
+    size: 28,
+    stroke: 1.75
+  })), React.createElement("div", {
+    className: "card-body"
+  }, React.createElement("p", {
+    className: "card-name"
+  }, r.name), React.createElement("p", {
+    className: "card-meta"
+  }, fmtTime(r.time), " · ", r.difficulty)));
+}
+function Sheet({
+  children,
+  onClose,
+  closeOnBackdrop
+}) {
+  return React.createElement("div", {
+    className: "overlay",
+    onMouseDown: e => {
+      if (closeOnBackdrop && e.target === e.currentTarget) onClose();
+    }
+  }, React.createElement("div", {
+    className: "sheet",
+    role: "dialog",
+    "aria-modal": "true"
+  }, children));
+}
+function Detail({
+  r,
+  onClose,
+  onEdit
+}) {
+  const f = famOf(r.family),
+    c = colorOf(r.protein);
+  const url = "https://www.google.com/search?q=" + encodeURIComponent("recette " + r.name);
+  return React.createElement(React.Fragment, null, React.createElement("div", {
+    className: "hero",
+    style: {
+      background: c.bg,
+      color: c.ink
+    }
+  }, React.createElement(Icon, {
+    name: f.icon,
+    size: 44,
+    stroke: 1.5
+  }), React.createElement("button", {
+    className: "round-btn on-color",
+    onClick: onClose,
+    "aria-label": "Fermer"
+  }, React.createElement(Icon, {
+    name: "x"
+  }))), React.createElement("div", {
+    className: "sheet-body"
+  }, React.createElement("p", {
+    className: "fam-label"
+  }, f.label), React.createElement("h2", {
+    className: "sheet-title"
+  }, r.name), React.createElement("div", {
+    className: "pills"
+  }, React.createElement("span", {
+    className: "pill"
+  }, React.createElement(Icon, {
+    name: "clock",
+    size: 16
+  }), fmtTime(r.time)), React.createElement("span", {
+    className: "pill"
+  }, r.difficulty), r.reheats && React.createElement("span", {
+    className: "pill green"
+  }, React.createElement(Icon, {
+    name: "check",
+    size: 16
+  }), "Se réchauffe bien")), React.createElement("h3", {
+    className: "section-title"
+  }, "Ingrédients"), r.ingredients.length ? React.createElement("ul", {
+    className: "ings"
+  }, r.ingredients.map((i, k) => React.createElement("li", {
+    key: k
+  }, i))) : React.createElement("p", {
+    className: "muted"
+  }, "Aucun ingrédient noté pour l'instant."), React.createElement("div", {
+    className: "actions"
+  }, React.createElement("a", {
+    className: "btn primary grow",
+    href: url,
+    target: "_blank",
+    rel: "noopener noreferrer"
+  }, React.createElement(Icon, {
+    name: "search",
+    size: 18
+  }), "Voir une recette sur Google"), React.createElement("button", {
+    className: "round-btn light big",
+    onClick: onEdit,
+    "aria-label": "Modifier cette idée"
+  }, React.createElement(Icon, {
+    name: "edit"
+  })))));
+}
+function Choice({
+  options,
+  value,
+  onChange,
+  multi
+}) {
+  return React.createElement("div", {
+    className: "choice"
+  }, options.map(o => {
+    const on = multi ? value.includes(o.id) : value === o.id;
+    return React.createElement("button", {
+      type: "button",
+      key: o.id,
+      className: "chip small" + (on ? " on" : ""),
+      "aria-pressed": on,
+      onClick: () => onChange(multi ? on ? value.filter(v => v !== o.id) : [...value, o.id] : o.id)
+    }, o.icon && React.createElement(Icon, {
+      name: o.icon,
+      size: 17
+    }), o.label);
+  }));
+}
+function Form({
+  initial,
+  presetName,
+  onCancel,
+  onSave,
+  onDelete
+}) {
+  const [d, setD] = useState(() => initial ? {
+    ...initial,
+    ingredients: [...initial.ingredients],
+    seasons: [...initial.seasons]
+  } : {
+    name: presetName || "",
+    family: "",
+    protein: "",
+    time: 30,
+    difficulty: "Facile",
+    reheats: false,
+    seasons: [],
+    ingredients: []
+  });
+  const [ing, setIng] = useState("");
+  const [errors, setErrors] = useState({});
+  const [confirmDel, setConfirmDel] = useState(false);
+  const set = (k, v) => {
+    setD(p => ({
+      ...p,
+      [k]: v
+    }));
+    setErrors(e => ({
+      ...e,
+      [k]: undefined
+    }));
+  };
+  const mergeIngs = (list, text) => {
+    const next = [...list];
+    text.split(/[,;\n]/).map(s => s.trim()).filter(Boolean).forEach(p => {
+      const clean = p.charAt(0).toUpperCase() + p.slice(1);
+      if (!next.some(x => norm(x) === norm(clean))) next.push(clean);
+    });
+    return next;
+  };
+  const addIng = () => {
+    if (!ing.trim()) return;
+    set("ingredients", mergeIngs(d.ingredients, ing));
+    setIng("");
+  };
+  const bumpTime = delta => set("time", Math.max(5, (parseInt(d.time, 10) || 0) + delta));
+  const save = () => {
+    const e = {};
+    if (!d.name.trim()) e.name = "Donne un nom à cette idée.";
+    if (!d.family) e.family = "Choisis une famille.";
+    const t = parseInt(d.time, 10);
+    if (!t || t < 1) e.time = "Indique un temps en minutes.";
+    if (Object.keys(e).length) {
+      setErrors(e);
+      return;
+    }
+    onSave({
+      ...d,
+      time: t,
+      ingredients: ing.trim() ? mergeIngs(d.ingredients, ing) : d.ingredients
+    });
+  };
+  return React.createElement(React.Fragment, null, React.createElement("div", {
+    className: "form-head"
+  }, React.createElement("h2", {
+    className: "sheet-title"
+  }, initial ? "Modifier l'idée" : "Nouvelle idée"), React.createElement("button", {
+    className: "round-btn light",
+    onClick: onCancel,
+    "aria-label": "Fermer"
+  }, React.createElement(Icon, {
+    name: "x"
+  }))), React.createElement("div", {
+    className: "sheet-body form"
+  }, React.createElement("div", {
+    className: "field"
+  }, React.createElement("label", {
+    className: "flabel",
+    htmlFor: "f-name"
+  }, "Nom du plat"), React.createElement("input", {
+    id: "f-name",
+    className: "text" + (errors.name ? " invalid" : ""),
+    value: d.name,
+    placeholder: "Gratin de poireaux au jambon",
+    onChange: e => set("name", e.target.value)
+  }), errors.name && React.createElement("p", {
+    className: "err"
+  }, errors.name)), React.createElement("div", {
+    className: "field"
+  }, React.createElement("span", {
+    className: "flabel"
+  }, "Famille"), React.createElement(Choice, {
+    options: FAMILIES,
+    value: d.family,
+    onChange: v => set("family", v)
+  }), errors.family && React.createElement("p", {
+    className: "err"
+  }, errors.family)), React.createElement("div", {
+    className: "field"
+  }, React.createElement("span", {
+    className: "flabel"
+  }, "Ingrédients"), React.createElement("div", {
+    className: "ing-row"
+  }, React.createElement("input", {
+    className: "text",
+    value: ing,
+    placeholder: "Poireaux, crème, jambon",
+    onChange: e => setIng(e.target.value),
+    onKeyDown: e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addIng();
+      }
+    }
+  }), React.createElement("button", {
+    type: "button",
+    className: "btn secondary",
+    onClick: addIng
+  }, "Ajouter")), d.ingredients.length > 0 && React.createElement("div", {
+    className: "choice ing-chips"
+  }, d.ingredients.map((x, k) => React.createElement("span", {
+    className: "chip small static",
+    key: k
+  }, x, React.createElement("button", {
+    type: "button",
+    className: "chip-x",
+    "aria-label": "Retirer " + x,
+    onClick: () => set("ingredients", d.ingredients.filter((_, j) => j !== k))
+  }, React.createElement(Icon, {
+    name: "x",
+    size: 14
+  })))))), React.createElement("div", {
+    className: "field two"
+  }, React.createElement("div", null, React.createElement("span", {
+    className: "flabel"
+  }, "Temps de préparation"), React.createElement("div", {
+    className: "stepper"
+  }, React.createElement("button", {
+    type: "button",
+    onClick: () => bumpTime(-5),
+    "aria-label": "Moins 5 minutes"
+  }, React.createElement(Icon, {
+    name: "minus",
+    size: 18
+  })), React.createElement("input", {
+    type: "number",
+    inputMode: "numeric",
+    min: "1",
+    value: d.time,
+    "aria-label": "Minutes",
+    onChange: e => set("time", e.target.value)
+  }), React.createElement("span", {
+    className: "unit"
+  }, "min"), React.createElement("button", {
+    type: "button",
+    onClick: () => bumpTime(5),
+    "aria-label": "Plus 5 minutes"
+  }, React.createElement(Icon, {
+    name: "plus",
+    size: 18
+  }))), errors.time && React.createElement("p", {
+    className: "err"
+  }, errors.time)), React.createElement("div", null, React.createElement("span", {
+    className: "flabel"
+  }, "Difficulté"), React.createElement(Choice, {
+    options: DIFFS.map(x => ({
+      id: x,
+      label: x
+    })),
+    value: d.difficulty,
+    onChange: v => set("difficulty", v)
+  }))), React.createElement("div", {
+    className: "field switch-row"
+  }, React.createElement("span", {
+    className: "flabel inline"
+  }, "Se réchauffe bien en gamelle"), React.createElement("button", {
+    type: "button",
+    role: "switch",
+    "aria-checked": d.reheats,
+    "aria-label": "Se réchauffe bien en gamelle",
+    className: "switch" + (d.reheats ? " on" : ""),
+    onClick: () => set("reheats", !d.reheats)
+  }, React.createElement("span", null))), React.createElement("div", {
+    className: "field"
+  }, React.createElement("span", {
+    className: "flabel"
+  }, "Base du plat"), React.createElement(Choice, {
+    options: PROTEINS,
+    value: d.protein,
+    onChange: v => set("protein", d.protein === v ? "" : v)
+  })), React.createElement("div", {
+    className: "field"
+  }, React.createElement("span", {
+    className: "flabel"
+  }, "Saisons"), React.createElement(Choice, {
+    multi: true,
+    options: SEASONS,
+    value: d.seasons,
+    onChange: v => set("seasons", v)
+  }))), React.createElement("div", {
+    className: "form-foot"
+  }, initial ? confirmDel ? React.createElement("button", {
+    type: "button",
+    className: "btn danger",
+    onClick: () => onDelete(initial.id)
+  }, React.createElement(Icon, {
+    name: "trash",
+    size: 18
+  }), "Confirmer la suppression") : React.createElement("button", {
+    type: "button",
+    className: "btn ghost-danger",
+    onClick: () => setConfirmDel(true)
+  }, React.createElement(Icon, {
+    name: "trash",
+    size: 18
+  }), "Supprimer") : React.createElement("span", null), React.createElement("div", {
+    className: "foot-right"
+  }, React.createElement("button", {
+    type: "button",
+    className: "btn secondary",
+    onClick: onCancel
+  }, "Annuler"), React.createElement("button", {
+    type: "button",
+    className: "btn primary",
+    onClick: save
+  }, "Enregistrer"))));
+}
+function App() {
+  const [data, setData] = useState(null);
+  const [family, setFamily] = useState("all");
+  const [query, setQuery] = useState("");
+  const [sheet, setSheet] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [toast, setToast] = useState("");
+  const fileRef = useRef(null);
+  const toastTimer = useRef(null);
+  useEffect(() => {
+    let alive = true;
+    store.load().then(d => {
+      if (!alive) return;
+      if (d && Array.isArray(d.recipes)) {
+        setData({
+          recipes: d.recipes.map(sanitize).filter(r => r.name),
+          deleted: Array.isArray(d.deleted) ? d.deleted : []
+        });
+      } else {
+        setData({
+          recipes: buildSeed(),
+          deleted: []
+        });
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  useEffect(() => {
+    document.body.style.overflow = sheet ? "hidden" : "";
+    const onKey = e => {
+      if (e.key === "Escape") {
+        setSheet(null);
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sheet]);
+  const flash = msg => {
+    setToast(msg);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(""), 2400);
+  };
+  const commit = next => {
+    setData(next);
+    store.save({
+      app: "lardoise",
+      version: 1,
+      recipes: next.recipes,
+      deleted: next.deleted
+    }).then(ok => {
+      if (!ok) flash("Enregistrement impossible sur cet appareil");
+    });
+  };
+  const recipes = data ? data.recipes : [];
+  const list = useMemo(() => {
+    const q = norm(query);
+    return recipes.filter(r => (family === "all" || r.family === family) && (!q || norm(r.name).includes(q) || r.ingredients.some(i => norm(i).includes(q)))).sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  }, [recipes, family, query]);
+  const current = sheet && sheet.id ? recipes.find(r => r.id === sheet.id) : null;
+  const saveRecipe = draft => {
+    const clean = sanitize(draft);
+    let next;
+    if (sheet.mode === "new") {
+      clean.id = uid();
+      clean.custom = true;
+      next = [...recipes, clean];
+    } else {
+      next = recipes.map(r => r.id === clean.id ? clean : r);
+    }
+    commit({
+      ...data,
+      recipes: next
+    });
+    flash(sheet.mode === "new" ? "Idée ajoutée" : "Modifications enregistrées");
+    setSheet({
+      mode: "view",
+      id: clean.id
+    });
+  };
+  const deleteRecipe = id => {
+    const deleted = id.startsWith("s") ? Array.from(new Set([...data.deleted, id])) : data.deleted;
+    commit({
+      recipes: recipes.filter(r => r.id !== id),
+      deleted
+    });
+    setSheet(null);
+    flash("Idée supprimée");
+  };
+  const exportData = () => {
+    setMenuOpen(false);
+    const payload = {
+      app: "lardoise",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      recipes,
+      deleted: data.deleted
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json"
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "lardoise-sauvegarde-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+    flash("Sauvegarde exportée");
+  };
+  const importData = e => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const d = JSON.parse(reader.result);
+        if (!d || !Array.isArray(d.recipes)) throw new Error("format");
+        const rec = d.recipes.map(sanitize).filter(r => r.name);
+        if (!rec.length) throw new Error("vide");
+        commit({
+          recipes: rec,
+          deleted: Array.isArray(d.deleted) ? d.deleted : []
+        });
+        setFamily("all");
+        flash(rec.length + " idées importées");
+      } catch (err) {
+        flash("Ce fichier n'est pas une sauvegarde de L'Ardoise");
+      }
+    };
+    reader.readAsText(file);
+  };
+  if (!data) return React.createElement("div", {
+    className: "loading"
+  }, "Chargement");
+  const capitalized = query.trim() ? query.trim().charAt(0).toUpperCase() + query.trim().slice(1) : "";
+  return React.createElement("div", {
+    className: "app"
+  }, React.createElement("header", {
+    className: "top"
+  }, React.createElement("div", null, React.createElement("h1", {
+    className: "title"
+  }, "Nos idées repas"), React.createElement("p", {
+    className: "count"
+  }, recipes.length, " idées dans la banque")), React.createElement("div", {
+    className: "tools"
+  }, React.createElement("label", {
+    className: "search"
+  }, React.createElement(Icon, {
+    name: "search",
+    size: 18
+  }), React.createElement("input", {
+    type: "search",
+    placeholder: "Plat ou ingrédient",
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    "aria-label": "Rechercher"
+  }), query && React.createElement("button", {
+    className: "clear",
+    onClick: () => setQuery(""),
+    "aria-label": "Effacer la recherche"
+  }, React.createElement(Icon, {
+    name: "x",
+    size: 16
+  }))), React.createElement("div", {
+    className: "menu-wrap"
+  }, React.createElement("button", {
+    className: "round-btn light",
+    onClick: () => setMenuOpen(o => !o),
+    "aria-label": "Plus d'options",
+    "aria-expanded": menuOpen
+  }, React.createElement(Icon, {
+    name: "dots"
+  })), menuOpen && React.createElement(React.Fragment, null, React.createElement("div", {
+    className: "menu-scrim",
+    onClick: () => setMenuOpen(false)
+  }), React.createElement("div", {
+    className: "menu",
+    role: "menu"
+  }, React.createElement("button", {
+    role: "menuitem",
+    onClick: exportData
+  }, React.createElement(Icon, {
+    name: "download",
+    size: 18
+  }), "Exporter une sauvegarde"), React.createElement("button", {
+    role: "menuitem",
+    onClick: () => {
+      setMenuOpen(false);
+      fileRef.current && fileRef.current.click();
+    }
+  }, React.createElement(Icon, {
+    name: "upload",
+    size: 18
+  }), "Importer une sauvegarde")))), React.createElement("button", {
+    className: "round-btn dark",
+    onClick: () => setSheet({
+      mode: "new"
+    }),
+    "aria-label": "Ajouter une idée"
+  }, React.createElement(Icon, {
+    name: "plus"
+  })), React.createElement("input", {
+    ref: fileRef,
+    type: "file",
+    accept: "application/json,.json",
+    hidden: true,
+    onChange: importData
+  }))), React.createElement("nav", {
+    className: "chips",
+    "aria-label": "Familles de plats"
+  }, React.createElement("button", {
+    className: "chip" + (family === "all" ? " on" : ""),
+    onClick: () => setFamily("all")
+  }, "Toutes"), FAMILIES.map(f => React.createElement("button", {
+    key: f.id,
+    className: "chip" + (family === f.id ? " on" : ""),
+    onClick: () => setFamily(f.id)
+  }, f.label))), list.length ? React.createElement("div", {
+    className: "grid"
+  }, list.map(r => React.createElement(Card, {
+    key: r.id,
+    r: r,
+    onOpen: () => setSheet({
+      mode: "view",
+      id: r.id
+    })
+  }))) : React.createElement("div", {
+    className: "empty"
+  }, query ? React.createElement(React.Fragment, null, React.createElement("p", {
+    className: "empty-title"
+  }, "Rien pour « ", query.trim(), " »"), React.createElement("p", {
+    className: "muted"
+  }, "Ajoute cette idée à la banque pour la retrouver la prochaine fois."), React.createElement("button", {
+    className: "btn primary",
+    onClick: () => setSheet({
+      mode: "new",
+      name: capitalized
+    })
+  }, React.createElement(Icon, {
+    name: "plus",
+    size: 18
+  }), "Ajouter « ", capitalized, " »")) : React.createElement(React.Fragment, null, React.createElement("p", {
+    className: "empty-title"
+  }, "Cette famille est vide"), React.createElement("p", {
+    className: "muted"
+  }, "Ajoute une première idée pour la remplir."), React.createElement("button", {
+    className: "btn primary",
+    onClick: () => setSheet({
+      mode: "new"
+    })
+  }, React.createElement(Icon, {
+    name: "plus",
+    size: 18
+  }), "Ajouter une idée"))), sheet && sheet.mode === "view" && current && React.createElement(Sheet, {
+    onClose: () => setSheet(null),
+    closeOnBackdrop: true
+  }, React.createElement(Detail, {
+    r: current,
+    onClose: () => setSheet(null),
+    onEdit: () => setSheet({
+      mode: "edit",
+      id: current.id
+    })
+  })), sheet && sheet.mode === "edit" && current && React.createElement(Sheet, {
+    onClose: () => setSheet(null)
+  }, React.createElement(Form, {
+    key: "e" + current.id,
+    initial: current,
+    onCancel: () => setSheet({
+      mode: "view",
+      id: current.id
+    }),
+    onSave: saveRecipe,
+    onDelete: deleteRecipe
+  })), sheet && sheet.mode === "new" && React.createElement(Sheet, {
+    onClose: () => setSheet(null)
+  }, React.createElement(Form, {
+    key: "new",
+    presetName: sheet.name,
+    onCancel: () => setSheet(null),
+    onSave: saveRecipe
+  })), toast && React.createElement("div", {
+    className: "toast",
+    role: "status"
+  }, toast));
+}
+(function setTouchIcon() {
+  try {
+    const c = document.createElement("canvas");
+    c.width = c.height = 180;
+    const x = c.getContext("2d");
+    x.fillStyle = "#FAEEDA";
+    x.fillRect(0, 0, 180, 180);
+    x.translate(36, 38);
+    x.scale(4.5, 4.5);
+    x.strokeStyle = "#854F0B";
+    x.lineWidth = 1.6;
+    x.lineCap = "round";
+    x.lineJoin = "round";
+    x.stroke(new Path2D("M4 8h16a1 1 0 0 1 1 1v.5c0 1.5 -2.517 5.573 -4 6.5v1a1 1 0 0 1 -1 1h-8a1 1 0 0 1 -1 -1v-1c-1.687 -1.054 -4 -5 -4 -6.5v-.5a1 1 0 0 1 1 -1"));
+    const l = document.createElement("link");
+    l.rel = "apple-touch-icon";
+    l.href = c.toDataURL("image/png");
+    document.head.appendChild(l);
+  } catch (e) {}
+})();
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App, null));
+</script>
+</body>
+</html>
