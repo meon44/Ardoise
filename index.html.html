@@ -120,12 +120,54 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .switch-label{display:block;font-size:16px;color:var(--ink)}
 .hint{font-size:13px;color:var(--ink3);margin:3px 0 0}
 .btn.ghost{color:var(--ink2);padding:0 12px}
+.tabs{display:flex;gap:6px;background:rgba(29,29,27,.05);padding:4px;border-radius:999px;margin:0 0 26px;width:fit-content;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 18px;border-radius:999px;font-size:15px;color:var(--ink2);white-space:nowrap}
+.tab.on{background:var(--surface);color:var(--ink);font-weight:560;box-shadow:0 1px 3px rgba(29,29,27,.08)}
+.tab svg{opacity:.75}
+.tile{position:relative}
+.fav-mark{position:absolute;top:8px;right:9px;display:grid;place-items:center}
+.card-why{font-size:13px;color:var(--ink2);margin:7px 0 0}
+.card-ago{font-size:13px;color:var(--ink3);margin:7px 0 0}
+.round-btn.on-color.left{right:auto;left:14px}
+.round-btn.on-color.fav{color:#C2334D}
+.cooked-box{background:var(--bg);border-radius:16px;padding:14px 16px;margin:0 0 18px}
+.cooked-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cooked-line{font-size:14px;color:var(--ink2);margin:0 0 10px}
+.cooked-row .cooked-line{margin:0}
+.tab-body{display:flex;flex-direction:column;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:20px 22px}
+.panel-title{font-family:var(--round);font-size:19px;font-weight:600;margin:0 0 4px}
+.panel .hint{margin:0 0 14px}
+.panel .ing-chips{margin-top:12px}
+.mini-list{display:flex;flex-direction:column}
+.mini{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);text-align:left;width:100%}
+.mini:last-child{border-bottom:0}
+.mini-dot{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;flex:none}
+.mini-name{flex:1;font-size:16px}
+.mini-ago{font-size:13px;color:var(--ink3);white-space:nowrap}
+.link-btn{font-size:14px;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.strip{margin:0 0 28px}
+.strip-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 14px}
+.strip-title{display:flex;align-items:center;gap:8px;font-family:var(--round);font-size:20px;font-weight:600;margin:0}
+.strip-title svg{opacity:.6}
+.strip-row{display:flex;gap:14px;overflow-x:auto;margin:0 calc(var(--pad) * -1);padding:2px var(--pad) 6px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.strip-row::-webkit-scrollbar{display:none}
+.strip-row .card{flex:0 0 186px;scroll-snap-align:start}
+.sheet-body.prefs{display:flex;flex-direction:column;gap:26px}
+.prefs .panel{border:0;padding:0;background:none}
+.block .hint{margin:0 0 12px}
 @media (max-width:640px){
   :root{--pad:18px}
   .title{font-size:30px}
   .tools{width:100%}
   .search{flex:1;width:auto}
   .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .tabs{width:100%}
+  .tab{flex:1;justify-content:center;padding:0 10px}
+  .panel{padding:16px 16px}
+  .strip-row .card{flex:0 0 150px}
+  .strip-title{font-size:18px}
   .tile{height:80px}
   .overlay{align-items:flex-end;padding:0}
   .sheet{border-radius:var(--r-sheet) var(--r-sheet) 0 0;max-height:94vh;max-height:94dvh}
@@ -284,8 +326,99 @@ const EMPTY_FILTERS = {
   moods: [],
   serve: null,
   seasonal: false,
-  lunchbox: false
+  lunchbox: false,
+  favorites: false
 };
+const RATINGS = [{
+  id: "adore",
+  label: "On adore",
+  score: 2.2
+}, {
+  id: "bien",
+  label: "C'était bien",
+  score: 0.6
+}, {
+  id: "bof",
+  label: "Bof",
+  score: -2
+}, {
+  id: "jamais",
+  label: "Plus jamais",
+  score: -99
+}];
+const EMPTY_TASTES = {
+  favorites: [],
+  liked: [],
+  disliked: []
+};
+const DAY = 86400000;
+const today = () => new Date().toISOString().slice(0, 10);
+const daysSince = iso => iso ? Math.floor((Date.now() - new Date(iso + "T12:00:00").getTime()) / DAY) : null;
+function agoText(d) {
+  if (d === null) return "";
+  if (d <= 0) return "Fait aujourd'hui";
+  if (d === 1) return "Fait hier";
+  if (d < 14) return "Fait il y a " + d + " jours";
+  if (d < 60) return "Fait il y a " + Math.round(d / 7) + " semaines";
+  return "Fait il y a " + Math.round(d / 30) + " mois";
+}
+function weekIndex() {
+  return Math.floor((Date.now() + 3 * DAY) / (7 * DAY));
+}
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = a + 0x6d2b79f5 >>> 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const hash = str => {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h, 31) + str.charCodeAt(i) | 0;
+  return h;
+};
+const hasWord = (list, text) => list.some(w => norm(text).includes(norm(w)));
+const isRejected = (r, t, log) => log[r.id] && log[r.id].rating === "jamais" || r.ingredients.some(i => hasWord(t.disliked, i));
+function scoreOf(r, t, log, seasonsNow, seed) {
+  const e = log[r.id] || {};
+  const d = daysSince(e.last);
+  if (d !== null && d < 12) return null;
+  let sc = rng(seed + hash(r.id))() * 1.4;
+  if (r.seasons.length && r.seasons.some(x => seasonsNow.includes(x))) sc += 2.6;
+  if (t.favorites.includes(r.id)) sc += 2.4;
+  const rt = RATINGS.find(x => x.id === e.rating);
+  if (rt) sc += rt.score;
+  const likes = r.ingredients.filter(i => hasWord(t.liked, i)).length;
+  sc += Math.min(likes, 2) * 0.9;
+  if (d === null) sc += 0.8;else if (d < 35) sc -= 1.4;
+  return sc;
+}
+function suggestWeek(recipes, t, log, seasonsNow, seed, n) {
+  const pool = recipes.filter(r => !isRejected(r, t, log)).map(r => ({
+    r,
+    sc: scoreOf(r, t, log, seasonsNow, seed)
+  })).filter(x => x.sc !== null);
+  const out = [];
+  while (out.length < n && pool.length) {
+    let best = null;
+    pool.forEach(x => {
+      let sc = x.sc;
+      out.forEach(p => {
+        if (p.family === x.r.family) sc -= 2.6;
+        if (p.protein === x.r.protein) sc -= 1.6;
+      });
+      if (!best || sc > best.sc) best = {
+        x,
+        sc
+      };
+    });
+    out.push(best.x.r);
+    pool.splice(pool.indexOf(best.x), 1);
+  }
+  return out;
+}
 const DEFAULT_FILTERS = {
   ...EMPTY_FILTERS,
   seasonal: true
@@ -311,7 +444,8 @@ function withSeedDefaults(r) {
   }
   return r;
 }
-function matchFilters(r, f, seasonsNow) {
+function matchFilters(r, f, seasonsNow, favs) {
+  if (f.favorites && !(favs || []).includes(r.id)) return false;
   if (f.time === "long" ? r.time <= 45 : f.time && r.time > f.time) return false;
   if (f.proteins.length && !f.proteins.includes(r.protein)) return false;
   if (f.seasonal && r.seasons.length && !r.seasons.some(x => seasonsNow.includes(x))) return false;
@@ -360,6 +494,14 @@ function activeFilters(f) {
     remove: p => ({
       ...p,
       serve: null
+    })
+  });
+  if (f.favorites) out.push({
+    key: "fav",
+    label: "Nos favoris",
+    remove: p => ({
+      ...p,
+      favorites: false
     })
   });
   if (f.lunchbox) out.push({
@@ -472,18 +614,12 @@ const PATHS = {
   check: React.createElement("path", {
     d: "M5 12.5l4.5 4.5L19 7.5"
   }),
-  dots: React.createElement(React.Fragment, null, React.createElement("circle", {
-    cx: "5",
-    cy: "12",
-    r: "1.3"
-  }), React.createElement("circle", {
+  settings: React.createElement(React.Fragment, null, React.createElement("circle", {
     cx: "12",
     cy: "12",
-    r: "1.3"
-  }), React.createElement("circle", {
-    cx: "19",
-    cy: "12",
-    r: "1.3"
+    r: "3"
+  }), React.createElement("path", {
+    d: "M10.3 4.3a1.9 1.9 0 0 1 3.4 0a1.9 1.9 0 0 0 2.8 1.2a1.9 1.9 0 0 1 2.4 2.4a1.9 1.9 0 0 0 1.2 2.8a1.9 1.9 0 0 1 0 3.4a1.9 1.9 0 0 0 -1.2 2.8a1.9 1.9 0 0 1 -2.4 2.4a1.9 1.9 0 0 0 -2.8 1.2a1.9 1.9 0 0 1 -3.4 0a1.9 1.9 0 0 0 -2.8 -1.2a1.9 1.9 0 0 1 -2.4 -2.4a1.9 1.9 0 0 0 -1.2 -2.8a1.9 1.9 0 0 1 0 -3.4a1.9 1.9 0 0 0 1.2 -2.8a1.9 1.9 0 0 1 2.4 -2.4a1.9 1.9 0 0 0 2.8 -1.2"
   })),
   trash: React.createElement(React.Fragment, null, React.createElement("path", {
     d: "M4 7h16M10 11v6M14 11v6"
@@ -495,6 +631,25 @@ const PATHS = {
   }),
   upload: React.createElement("path", {
     d: "M12 16V5M7 9.5l5-5 5 5M5 20h14"
+  }),
+  heart: React.createElement("path", {
+    d: "M12 20l-7.1 -7.2a4.6 4.6 0 0 1 6.5 -6.5l.6 .6l.6 -.6a4.6 4.6 0 0 1 6.5 6.5z"
+  }),
+  sparkle: React.createElement("path", {
+    d: "M12 3l1.9 5.1l5.1 1.9l-5.1 1.9l-1.9 5.1l-1.9 -5.1l-5.1 -1.9l5.1 -1.9z"
+  }),
+  book: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M3 19a2 2 0 0 1 2 -2h14v-13h-14a2 2 0 0 0 -2 2z"
+  }), React.createElement("path", {
+    d: "M5 17v4h14"
+  })),
+  refresh: React.createElement(React.Fragment, null, React.createElement("path", {
+    d: "M20 11a8.1 8.1 0 0 0 -15.5 -2M4 5v4h4"
+  }), React.createElement("path", {
+    d: "M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"
+  })),
+  back: React.createElement("path", {
+    d: "M5 12h14M5 12l6 -6M5 12l6 6"
   }),
   sliders: React.createElement(React.Fragment, null, React.createElement("path", {
     d: "M14 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M4 6h10M18 6h2"
@@ -581,7 +736,10 @@ function Icon({
 }
 function Card({
   r,
-  onOpen
+  onOpen,
+  fav,
+  ago,
+  why
 }) {
   const f = famOf(r.family),
     c = colorOf(r.protein);
@@ -598,13 +756,24 @@ function Card({
     name: f.icon,
     size: 28,
     stroke: 1.75
-  })), React.createElement("div", {
+  }), fav && React.createElement("span", {
+    className: "fav-mark",
+    "aria-label": "Favori"
+  }, React.createElement(Icon, {
+    name: "heart",
+    size: 15,
+    stroke: 2.1
+  }))), React.createElement("div", {
     className: "card-body"
   }, React.createElement("p", {
     className: "card-name"
   }, r.name), React.createElement("p", {
     className: "card-meta"
-  }, fmtTime(r.time), " · ", r.difficulty)));
+  }, fmtTime(r.time), " · ", r.difficulty), why ? React.createElement("p", {
+    className: "card-why"
+  }, why) : ago ? React.createElement("p", {
+    className: "card-ago"
+  }, ago) : null));
 }
 function Sheet({
   children,
@@ -625,11 +794,18 @@ function Sheet({
 function Detail({
   r,
   onClose,
-  onEdit
+  onEdit,
+  entry,
+  fav,
+  onFav,
+  onCooked,
+  onRate
 }) {
   const f = famOf(r.family),
     c = colorOf(r.protein);
   const url = "https://www.google.com/search?q=" + encodeURIComponent("recette " + r.name);
+  const d = daysSince(entry.last);
+  const justCooked = d !== null && d <= 1;
   return React.createElement(React.Fragment, null, React.createElement("div", {
     className: "hero",
     style: {
@@ -641,6 +817,14 @@ function Detail({
     size: 44,
     stroke: 1.5
   }), React.createElement("button", {
+    className: "round-btn on-color left" + (fav ? " fav" : ""),
+    onClick: onFav,
+    "aria-pressed": fav,
+    "aria-label": fav ? "Retirer des favoris" : "Ajouter aux favoris"
+  }, React.createElement(Icon, {
+    name: "heart",
+    stroke: fav ? 2.4 : 1.9
+  })), React.createElement("button", {
     className: "round-btn on-color",
     onClick: onClose,
     "aria-label": "Fermer"
@@ -680,6 +864,29 @@ function Detail({
   }, i))) : React.createElement("p", {
     className: "muted"
   }, "Aucun ingrédient noté pour l'instant."), React.createElement("div", {
+    className: "cooked-box"
+  }, justCooked || entry.rating && d !== null && d < 30 ? React.createElement(React.Fragment, null, React.createElement("p", {
+    className: "cooked-line"
+  }, agoText(d), entry.times > 1 ? " · " + entry.times + " fois en tout" : ""), React.createElement("div", {
+    className: "choice"
+  }, RATINGS.map(x => React.createElement("button", {
+    key: x.id,
+    type: "button",
+    className: "chip small" + (entry.rating === x.id ? " on" : ""),
+    "aria-pressed": entry.rating === x.id,
+    onClick: () => onRate(entry.rating === x.id ? null : x.id)
+  }, x.label)))) : React.createElement("div", {
+    className: "cooked-row"
+  }, React.createElement("button", {
+    type: "button",
+    className: "btn secondary",
+    onClick: onCooked
+  }, React.createElement(Icon, {
+    name: "check",
+    size: 18
+  }), "On l'a fait"), d !== null && React.createElement("span", {
+    className: "cooked-line"
+  }, agoText(d), entry.times > 1 ? " · " + entry.times + " fois" : ""))), React.createElement("div", {
     className: "actions"
   }, React.createElement("a", {
     className: "btn primary grow",
@@ -1057,6 +1264,16 @@ function FilterSheet({
     className: "field switch-row"
   }, React.createElement("div", null, React.createElement("span", {
     className: "switch-label"
+  }, "Nos favoris"), React.createElement("p", {
+    className: "hint"
+  }, "Uniquement les plats avec un cœur")), React.createElement(Switch, {
+    on: f.favorites,
+    label: "Nos favoris",
+    onClick: () => up("favorites", !f.favorites)
+  })), React.createElement("div", {
+    className: "field switch-row"
+  }, React.createElement("div", null, React.createElement("span", {
+    className: "switch-label"
   }, "De saison"), React.createElement("p", {
     className: "hint"
   }, season.charAt(0).toUpperCase() + season.slice(1), " en ce moment")), React.createElement(Switch, {
@@ -1085,14 +1302,160 @@ function FilterSheet({
     onClick: onClose
   }, count ? "Voir " + count + (count > 1 ? " idées" : " idée") : "Aucune idée")));
 }
+function WordList({
+  title,
+  hint,
+  words,
+  onChange,
+  placeholder
+}) {
+  const [v, setV] = useState("");
+  const add = () => {
+    const next = [...words];
+    v.split(/[,;\n]/).map(x => x.trim()).filter(Boolean).forEach(w => {
+      if (!next.some(x => norm(x) === norm(w))) next.push(w.charAt(0).toUpperCase() + w.slice(1));
+    });
+    onChange(next);
+    setV("");
+  };
+  return React.createElement("section", {
+    className: "panel"
+  }, React.createElement("h2", {
+    className: "panel-title"
+  }, title), React.createElement("p", {
+    className: "hint"
+  }, hint), React.createElement("div", {
+    className: "ing-row"
+  }, React.createElement("input", {
+    className: "text",
+    value: v,
+    placeholder: placeholder,
+    onChange: e => setV(e.target.value),
+    onKeyDown: e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        add();
+      }
+    }
+  }), React.createElement("button", {
+    type: "button",
+    className: "btn secondary",
+    onClick: add
+  }, "Ajouter")), words.length > 0 && React.createElement("div", {
+    className: "choice ing-chips"
+  }, words.map((w, k) => React.createElement("span", {
+    className: "chip small static",
+    key: k
+  }, w, React.createElement("button", {
+    type: "button",
+    className: "chip-x",
+    "aria-label": "Retirer " + w,
+    onClick: () => onChange(words.filter((_, j) => j !== k))
+  }, React.createElement(Icon, {
+    name: "x",
+    size: 14
+  }))))));
+}
+function PrefsSheet({
+  tastes,
+  setTastes,
+  recipes,
+  log,
+  setLog,
+  onClose,
+  onExport,
+  onImport
+}) {
+  const aside = recipes.filter(r => isRejected(r, tastes, log));
+  return React.createElement(React.Fragment, null, React.createElement("div", {
+    className: "form-head"
+  }, React.createElement("h2", {
+    className: "sheet-title"
+  }, "Nos goûts"), React.createElement("button", {
+    className: "round-btn light",
+    onClick: onClose,
+    "aria-label": "Fermer"
+  }, React.createElement(Icon, {
+    name: "x"
+  }))), React.createElement("div", {
+    className: "sheet-body prefs"
+  }, React.createElement(WordList, {
+    title: "On aime",
+    hint: "Les plats qui en contiennent reviennent plus souvent dans les idées de la semaine.",
+    placeholder: "Saumon, poireaux, fromage",
+    words: tastes.liked,
+    onChange: w => setTastes({
+      ...tastes,
+      liked: w
+    })
+  }), React.createElement(WordList, {
+    title: "On n'aime pas",
+    hint: "Les plats qui en contiennent sont mis de côté partout dans l'appli.",
+    placeholder: "Aubergine, olives",
+    words: tastes.disliked,
+    onChange: w => setTastes({
+      ...tastes,
+      disliked: w
+    })
+  }), React.createElement("section", {
+    className: "block"
+  }, React.createElement("h3", {
+    className: "panel-title"
+  }, "Mis de côté"), React.createElement("p", {
+    className: "hint"
+  }, "Notés « plus jamais » ou contenant un ingrédient qu'on n'aime pas."), aside.length ? React.createElement("div", {
+    className: "mini-list"
+  }, aside.map(r => React.createElement("div", {
+    key: r.id,
+    className: "mini static"
+  }, React.createElement("span", {
+    className: "mini-name"
+  }, r.name), (log[r.id] || {}).rating === "jamais" ? React.createElement("button", {
+    className: "link-btn",
+    onClick: () => setLog({
+      ...log,
+      [r.id]: {
+        ...log[r.id],
+        rating: null
+      }
+    })
+  }, "Remettre") : React.createElement("span", {
+    className: "mini-ago"
+  }, "Ingrédient exclu")))) : React.createElement("p", {
+    className: "hint"
+  }, "Rien pour l'instant.")), React.createElement("section", {
+    className: "block"
+  }, React.createElement("h3", {
+    className: "panel-title"
+  }, "Sauvegarde"), React.createElement("p", {
+    className: "hint"
+  }, "Un fichier avec toutes vos idées, vos goûts et votre historique."), React.createElement("div", {
+    className: "ing-row"
+  }, React.createElement("button", {
+    type: "button",
+    className: "btn secondary",
+    onClick: onExport
+  }, React.createElement(Icon, {
+    name: "download",
+    size: 18
+  }), "Exporter"), React.createElement("button", {
+    type: "button",
+    className: "btn secondary",
+    onClick: onImport
+  }, React.createElement(Icon, {
+    name: "upload",
+    size: 18
+  }), "Importer")))));
+}
 function App() {
   const [data, setData] = useState(null);
   const [family, setFamily] = useState("all");
   const [query, setQuery] = useState("");
   const [sheet, setSheet] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [tab, setTab] = useState("idees");
+  const [shuffle, setShuffle] = useState(0);
   const seasonsNow = useMemo(nowSeasons, []);
   const fileRef = useRef(null);
   const toastTimer = useRef(null);
@@ -1103,12 +1466,19 @@ function App() {
       if (d && Array.isArray(d.recipes)) {
         setData({
           recipes: d.recipes.map(withSeedDefaults).map(sanitize).filter(r => r.name),
-          deleted: Array.isArray(d.deleted) ? d.deleted : []
+          deleted: Array.isArray(d.deleted) ? d.deleted : [],
+          tastes: {
+            ...EMPTY_TASTES,
+            ...(d.tastes || {})
+          },
+          log: d.log && typeof d.log === "object" ? d.log : {}
         });
       } else {
         setData({
           recipes: buildSeed(),
-          deleted: []
+          deleted: [],
+          tastes: EMPTY_TASTES,
+          log: {}
         });
       }
     });
@@ -1119,10 +1489,7 @@ function App() {
   useEffect(() => {
     document.body.style.overflow = sheet ? "hidden" : "";
     const onKey = e => {
-      if (e.key === "Escape") {
-        setSheet(null);
-        setMenuOpen(false);
-      }
+      if (e.key === "Escape") setSheet(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1136,19 +1503,65 @@ function App() {
     setData(next);
     store.save({
       app: "lardoise",
-      version: 1,
+      version: 2,
       recipes: next.recipes,
-      deleted: next.deleted
+      deleted: next.deleted,
+      tastes: next.tastes,
+      log: next.log
     }).then(ok => {
       if (!ok) flash("Enregistrement impossible sur cet appareil");
     });
   };
   const recipes = data ? data.recipes : [];
+  const tastes = data ? data.tastes : EMPTY_TASTES;
+  const log = data ? data.log : {};
+  const setTastes = t => commit({
+    ...data,
+    tastes: t
+  });
+  const setLog = l => commit({
+    ...data,
+    log: l
+  });
+  const toggleFav = id => setTastes({
+    ...tastes,
+    favorites: tastes.favorites.includes(id) ? tastes.favorites.filter(x => x !== id) : [...tastes.favorites, id]
+  });
+  const markCooked = id => {
+    const e = log[id] || {};
+    setLog({
+      ...log,
+      [id]: {
+        ...e,
+        last: today(),
+        times: (e.times || 0) + 1
+      }
+    });
+    flash("Noté, bon appétit");
+  };
+  const rate = (id, rating) => setLog({
+    ...log,
+    [id]: {
+      ...(log[id] || {}),
+      rating
+    }
+  });
+  const favorites = useMemo(() => recipes.filter(r => tastes.favorites.includes(r.id)).sort((a, b) => a.name.localeCompare(b.name, "fr")), [recipes, tastes]);
+  const suggestions = useMemo(() => suggestWeek(recipes, tastes, log, seasonsNow, weekIndex() + shuffle * 977, 6), [recipes, tastes, log, seasonsNow, shuffle]);
+  const whyOf = r => {
+    if (tastes.favorites.includes(r.id)) return "Un de vos favoris";
+    if ((log[r.id] || {}).rating === "adore") return "Vous aviez adoré";
+    const li = r.ingredients.find(i => hasWord(tastes.liked, i));
+    if (li) return "Avec " + li.toLowerCase();
+    if (r.seasons.length && r.seasons.every(x => seasonsNow.includes(x))) return "De saison en ce moment";
+    if (!log[r.id]) return "Jamais essayé";
+    return "";
+  };
   const baseList = useMemo(() => {
     const q = norm(query);
-    return recipes.filter(r => (family === "all" || r.family === family) && (!q || norm(r.name).includes(q) || r.ingredients.some(i => norm(i).includes(q)))).sort((a, b) => a.name.localeCompare(b.name, "fr"));
-  }, [recipes, family, query]);
-  const list = useMemo(() => baseList.filter(r => matchFilters(r, filters, seasonsNow)), [baseList, filters, seasonsNow]);
+    return recipes.filter(r => !isRejected(r, tastes, log) && (family === "all" || r.family === family) && (!q || norm(r.name).includes(q) || r.ingredients.some(i => norm(i).includes(q)))).sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  }, [recipes, family, query, tastes, log]);
+  const list = useMemo(() => baseList.filter(r => matchFilters(r, filters, seasonsNow, tastes.favorites)), [baseList, filters, seasonsNow, tastes]);
   const actives = activeFilters(filters);
   const current = sheet && sheet.id ? recipes.find(r => r.id === sheet.id) : null;
   const saveRecipe = draft => {
@@ -1173,21 +1586,32 @@ function App() {
   };
   const deleteRecipe = id => {
     const deleted = id.startsWith("s") ? Array.from(new Set([...data.deleted, id])) : data.deleted;
+    const nextLog = {
+      ...log
+    };
+    delete nextLog[id];
     commit({
+      ...data,
       recipes: recipes.filter(r => r.id !== id),
-      deleted
+      deleted,
+      log: nextLog,
+      tastes: {
+        ...tastes,
+        favorites: tastes.favorites.filter(x => x !== id)
+      }
     });
     setSheet(null);
     flash("Idée supprimée");
   };
   const exportData = () => {
-    setMenuOpen(false);
     const payload = {
       app: "lardoise",
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       recipes,
-      deleted: data.deleted
+      deleted: data.deleted,
+      tastes,
+      log
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: "application/json"
@@ -1214,9 +1638,15 @@ function App() {
         if (!rec.length) throw new Error("vide");
         commit({
           recipes: rec,
-          deleted: Array.isArray(d.deleted) ? d.deleted : []
+          deleted: Array.isArray(d.deleted) ? d.deleted : [],
+          tastes: {
+            ...EMPTY_TASTES,
+            ...(d.tastes || {})
+          },
+          log: d.log && typeof d.log === "object" ? d.log : {}
         });
         setFamily("all");
+        setSheet(null);
         flash(rec.length + " idées importées");
       } catch (err) {
         flash("Ce fichier n'est pas une sauvegarde de L'Ardoise");
@@ -1234,11 +1664,11 @@ function App() {
     className: "top"
   }, React.createElement("div", null, React.createElement("h1", {
     className: "title"
-  }, "Nos idées repas"), React.createElement("p", {
+  }, tab === "favoris" ? "Nos favoris" : "Nos idées repas"), React.createElement("p", {
     className: "count"
-  }, recipes.length, " idées dans la banque")), React.createElement("div", {
+  }, tab === "favoris" ? favorites.length + (favorites.length > 1 ? " valeurs sûres" : " valeur sûre") : baseList.length + " idées dans la banque")), React.createElement("div", {
     className: "tools"
-  }, React.createElement("label", {
+  }, tab === "idees" && React.createElement("label", {
     className: "search"
   }, React.createElement(Icon, {
     name: "search",
@@ -1256,7 +1686,7 @@ function App() {
   }, React.createElement(Icon, {
     name: "x",
     size: 16
-  }))), React.createElement("button", {
+  }))), tab === "idees" && React.createElement("button", {
     className: "round-btn light",
     onClick: () => setSheet({
       mode: "filters"
@@ -1266,37 +1696,15 @@ function App() {
     name: "sliders"
   }), actives.length > 0 && React.createElement("span", {
     className: "badge"
-  }, actives.length)), React.createElement("div", {
-    className: "menu-wrap"
-  }, React.createElement("button", {
+  }, actives.length)), React.createElement("button", {
     className: "round-btn light",
-    onClick: () => setMenuOpen(o => !o),
-    "aria-label": "Plus d'options",
-    "aria-expanded": menuOpen
+    onClick: () => setSheet({
+      mode: "prefs"
+    }),
+    "aria-label": "Nos goûts"
   }, React.createElement(Icon, {
-    name: "dots"
-  })), menuOpen && React.createElement(React.Fragment, null, React.createElement("div", {
-    className: "menu-scrim",
-    onClick: () => setMenuOpen(false)
-  }), React.createElement("div", {
-    className: "menu",
-    role: "menu"
-  }, React.createElement("button", {
-    role: "menuitem",
-    onClick: exportData
-  }, React.createElement(Icon, {
-    name: "download",
-    size: 18
-  }), "Exporter une sauvegarde"), React.createElement("button", {
-    role: "menuitem",
-    onClick: () => {
-      setMenuOpen(false);
-      fileRef.current && fileRef.current.click();
-    }
-  }, React.createElement(Icon, {
-    name: "upload",
-    size: 18
-  }), "Importer une sauvegarde")))), React.createElement("button", {
+    name: "settings"
+  })), React.createElement("button", {
     className: "round-btn dark",
     onClick: () => setSheet({
       mode: "new"
@@ -1311,6 +1719,65 @@ function App() {
     hidden: true,
     onChange: importData
   }))), React.createElement("nav", {
+    className: "tabs",
+    "aria-label": "Sections"
+  }, [["idees", "Nos idées", "book"], ["favoris", "Nos favoris", "heart"]].map(([id, label, icon]) => React.createElement("button", {
+    key: id,
+    className: "tab" + (tab === id ? " on" : ""),
+    "aria-current": tab === id,
+    onClick: () => setTab(id)
+  }, React.createElement(Icon, {
+    name: icon,
+    size: 18
+  }), label))), tab === "favoris" && (favorites.length ? React.createElement("div", {
+    className: "grid"
+  }, favorites.map(r => React.createElement(Card, {
+    key: r.id,
+    r: r,
+    fav: true,
+    ago: agoText(daysSince((log[r.id] || {}).last)),
+    onOpen: () => setSheet({
+      mode: "view",
+      id: r.id
+    })
+  }))) : React.createElement("div", {
+    className: "empty"
+  }, React.createElement("p", {
+    className: "empty-title"
+  }, "Pas encore de favori"), React.createElement("p", {
+    className: "muted"
+  }, "Touche le cœur sur une fiche pour y ranger vos valeurs sûres."), React.createElement("button", {
+    className: "btn primary",
+    onClick: () => setTab("idees")
+  }, "Voir nos idées"))), tab === "idees" && React.createElement(React.Fragment, null, suggestions.length > 0 && !query && family === "all" && React.createElement("section", {
+    className: "strip"
+  }, React.createElement("div", {
+    className: "strip-head"
+  }, React.createElement("div", null, React.createElement("h2", {
+    className: "strip-title"
+  }, React.createElement(Icon, {
+    name: "sparkle",
+    size: 18
+  }), "Pour nous cette semaine"), React.createElement("p", {
+    className: "hint"
+  }, "Renouvelé chaque lundi")), React.createElement("button", {
+    className: "round-btn light",
+    onClick: () => setShuffle(n => n + 1),
+    "aria-label": "Proposer autre chose"
+  }, React.createElement(Icon, {
+    name: "refresh"
+  }))), React.createElement("div", {
+    className: "strip-row"
+  }, suggestions.map(r => React.createElement(Card, {
+    key: r.id,
+    r: r,
+    fav: tastes.favorites.includes(r.id),
+    why: whyOf(r),
+    onOpen: () => setSheet({
+      mode: "view",
+      id: r.id
+    })
+  })))), React.createElement("nav", {
     className: "chips",
     "aria-label": "Familles de plats"
   }, React.createElement("button", {
@@ -1337,6 +1804,8 @@ function App() {
   }, list.map(r => React.createElement(Card, {
     key: r.id,
     r: r,
+    fav: tastes.favorites.includes(r.id),
+    ago: agoText(daysSince((log[r.id] || {}).last)),
     onOpen: () => setSheet({
       mode: "view",
       id: r.id
@@ -1375,7 +1844,7 @@ function App() {
   }, React.createElement(Icon, {
     name: "plus",
     size: 18
-  }), "Ajouter une idée"))), sheet && sheet.mode === "view" && current && React.createElement(Sheet, {
+  }), "Ajouter une idée")))), sheet && sheet.mode === "view" && current && React.createElement(Sheet, {
     onClose: () => setSheet(null),
     closeOnBackdrop: true
   }, React.createElement(Detail, {
@@ -1384,7 +1853,12 @@ function App() {
     onEdit: () => setSheet({
       mode: "edit",
       id: current.id
-    })
+    }),
+    entry: log[current.id] || {},
+    fav: tastes.favorites.includes(current.id),
+    onFav: () => toggleFav(current.id),
+    onCooked: () => markCooked(current.id),
+    onRate: v => rate(current.id, v)
   })), sheet && sheet.mode === "edit" && current && React.createElement(Sheet, {
     onClose: () => setSheet(null)
   }, React.createElement(Form, {
@@ -1396,6 +1870,18 @@ function App() {
     }),
     onSave: saveRecipe,
     onDelete: deleteRecipe
+  })), sheet && sheet.mode === "prefs" && React.createElement(Sheet, {
+    onClose: () => setSheet(null),
+    closeOnBackdrop: true
+  }, React.createElement(PrefsSheet, {
+    tastes: tastes,
+    setTastes: setTastes,
+    recipes: recipes,
+    log: log,
+    setLog: setLog,
+    onClose: () => setSheet(null),
+    onExport: exportData,
+    onImport: () => fileRef.current && fileRef.current.click()
   })), sheet && sheet.mode === "filters" && React.createElement(Sheet, {
     onClose: () => setSheet(null),
     closeOnBackdrop: true
